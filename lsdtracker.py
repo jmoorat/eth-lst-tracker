@@ -16,6 +16,7 @@ w3 = Web3(Web3.HTTPProvider(os.environ.get("WEB3_PROVIDER")))
 ONE_ETHER_STR: str = w3.to_wei(1, "ether")
 ETH_ADDRESS = os.getenv("ETH_ADDRESS")
 WETH_ADDRESS_POLYGON = os.getenv("WETH_ADDRESS_POLYGON")
+WETH_ADDRESS_GNOSIS = os.getenv("WETH_ADDRESS_GNOSIS")
 DATABASE_URL = os.getenv("DATABASE_URL")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 HTTP_PROXY = os.getenv("HTTP_PROXY")
@@ -25,7 +26,9 @@ CHAIN_ID_MAPPING = {
     "ethereum": 1,
     "arbitrum": 42161,
     "polygon": 137,
-    "optimism": 10
+    "optimism": 10,
+    "gnosis": 100,
+    "base": 8453
 }
 
 proxies = {
@@ -78,6 +81,23 @@ def eth_price_to_string(eth_amount: int) -> str:
     rem: int = eth_amount % 10 ** 12
     return w3.from_wei(eth_amount - rem, 'ether')
 
+def get_eth_address_from_network(network: str) -> str:
+    """
+    Returns the ETH/WETH token address for a network
+
+    Args:
+        network (str): The network we want the ETH token address for
+
+    Returns:
+        str: The ETH token address
+    """
+    if network == "polygon":
+        return WETH_ADDRESS_POLYGON
+    elif network == "gnosis":
+        return WETH_ADDRESS_GNOSIS
+    else:
+        return ETH_ADDRESS
+
 
 def get_secondary_market_rate(token_address: str, network: str) -> int:
     """
@@ -93,7 +113,7 @@ def get_secondary_market_rate(token_address: str, network: str) -> int:
     time.sleep(1)  # 1inch API rate limit
     quote_params = {
         'src': token_address,
-        'dst': ETH_ADDRESS if network != "polygon" else WETH_ADDRESS_POLYGON,
+        'dst': get_eth_address_from_network(network),
         'amount': str(ONE_ETHER_STR)
     }
     url = f"https://api.1inch.dev/swap/v5.2/{CHAIN_ID_MAPPING[network]}/quote?{requests.compat.urlencode(quote_params)}"

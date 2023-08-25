@@ -4,7 +4,8 @@
         "token_addresses": {
             "ethereum": "0xae78736Cd615f374D3085123A210448E74Fc6393",
             "arbitrum": "0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8",
-            "optimism": "0x9Bcef72be871e61ED4fBbc7630889beE758eb81D"
+            "optimism": "0x9Bcef72be871e61ED4fBbc7630889beE758eb81D",
+            "polygon": "0x0266f4f08d82372cf0fcbccc0ff74309089c74d1"
         },
         "native_contract_abi": [{"name": "getExchangeRate", "outputs": [{"type": "uint256", "name": ""}], "inputs": [], "stateMutability": "view", "type": "function"}],
         "get_exchange_rate_function_name": "getExchangeRate"
@@ -15,7 +16,8 @@
             "ethereum": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
             "arbitrum": "0x5979D7b546E38E414F7E9822514be443A4800529",
             "optimism": "0x1f32b1c2345538c0c6f582fcb022739c4a194ebb",
-            "polygon": "0x03b54A6e9a984069379fae1a4fC4dBAE93B3bCCD"
+            "polygon": "0x03b54A6e9a984069379fae1a4fC4dBAE93B3bCCD",
+            "gnosis": "0x6c76971f98945ae98dd7d4dfca8711ebea946ea6"
         },
         "native_contract_abi": [{"name": "stEthPerToken", "outputs": [{"type": "uint256", "name": ""}], "inputs": [], "stateMutability": "view", "type": "function"}],
         "get_exchange_rate_function_name": "stEthPerToken"
@@ -23,9 +25,22 @@
     {
         "token_name": "cbETH",
         "token_addresses": {
-            "ethereum": "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704"
+            "ethereum": "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704",
+            "arbitrum": "0x1DEBd73E752bEaF79865Fd6446b0c970EaE7732f",
+            "optimism": "0xadDb6A0412DE1BA0F936DCaeb8Aaa24578dcF3B2",
+            "polygon": "0x4b4327db1600b8b1440163f667e199cef35385f5",
+            "base": "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"
         },
         "native_contract_abi": [{"name": "exchangeRate", "outputs": [{"type": "uint256", "name": ""}], "inputs": [], "stateMutability": "view", "type": "function"}],
         "get_exchange_rate_function_name": "exchangeRate"
+    },
+    {
+        "token_name": "sfrxETH",
+        "token_addresses": {
+            "ethereum": "0xac3E018457B222d93114458476f3E3416Abbe38F",
+            "arbitrum": "0x95aB45875cFFdba1E5f451B950bC2E42c0053f39"
+        },
+        "native_contract_abi": [{"name": "pricePerShare", "outputs": [{"type": "uint256", "name": ""}], "inputs": [], "stateMutability": "view", "type": "function"}],
+        "get_exchange_rate_function_name": "pricePerShare"
     }
 ]
