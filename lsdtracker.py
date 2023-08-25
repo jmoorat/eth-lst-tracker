@@ -1,14 +1,14 @@
-import os
-import requests
-from web3 import Web3
-import json
-import time
-from sqlalchemy import create_engine, Column, Numeric, String, Boolean, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 import datetime
+import json
 import logging
+import os
+import time
+
+import requests
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, Column, Numeric, String, Boolean, DateTime
+from sqlalchemy.orm import sessionmaker, declarative_base
+from web3 import Web3
 
 load_dotenv()
 
@@ -18,11 +18,19 @@ ETH_ADDRESS = os.getenv("ETH_ADDRESS")
 WETH_ADDRESS_POLYGON = os.getenv("WETH_ADDRESS_POLYGON")
 DATABASE_URL = os.getenv("DATABASE_URL")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+HTTP_PROXY = os.getenv("HTTP_PROXY")
+DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
+ONE_INCH_API_KEY = os.getenv("ONE_INCH_API_KEY")
 CHAIN_ID_MAPPING = {
     "ethereum": 1,
     "arbitrum": 42161,
     "polygon": 137,
     "optimism": 10
+}
+
+proxies = {
+    'http': HTTP_PROXY,
+    'https': HTTP_PROXY
 }
 
 logging.basicConfig(
@@ -31,13 +39,14 @@ logging.basicConfig(
 )
 
 # Create the SQLAlchemy engine
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL) if not DRY_RUN else None
 
 # Create a session factory
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine) if not DRY_RUN else None
 
 # Create a base class for declarative models
 Base = declarative_base()
+
 
 class LsdPriceModel(Base):
     """
@@ -53,6 +62,7 @@ class LsdPriceModel(Base):
     is_primary_market = Column(Boolean)
     premium = Column(Numeric(6, 5))
 
+
 def load_config():
     """
     Loads config from lsd.json
@@ -60,12 +70,14 @@ def load_config():
     with open('lsd.json') as f:
         return json.load(f)
 
-def eth_price_to_sting(r) -> str:
+
+def eth_price_to_string(eth_amount: int) -> str:
     """
-    Converts a rate to a string
+    Converts an ETH amount in wei to a string
     """
-    rem = r % 10**12
-    return w3.from_wei(r - rem, 'ether')
+    rem: int = eth_amount % 10 ** 12
+    return w3.from_wei(eth_amount - rem, 'ether')
+
 
 def get_secondary_market_rate(token_address: str, network: str) -> int:
     """
@@ -78,20 +90,33 @@ def get_secondary_market_rate(token_address: str, network: str) -> int:
     Returns:
         int: The secondary market rate
     """
+    time.sleep(1)  # 1inch API rate limit
     quote_params = {
-        'fromTokenAddress': token_address,
-        'toTokenAddress': ETH_ADDRESS if network != "polygon" else WETH_ADDRESS_POLYGON,
+        'src': token_address,
+        'dst': ETH_ADDRESS if network != "polygon" else WETH_ADDRESS_POLYGON,
         'amount': str(ONE_ETHER_STR)
     }
-    url = f"https://api.1inch.io/v5.0/{CHAIN_ID_MAPPING[network]}/quote?{requests.compat.urlencode(quote_params)}"
-    response = requests.get(url)
+    url = f"https://api.1inch.dev/swap/v5.2/{CHAIN_ID_MAPPING[network]}/quote?{requests.compat.urlencode(quote_params)}"
+
+    try:
+        response = requests.get(
+            url,
+            proxies=proxies,
+            headers={
+                "Authorization": ONE_INCH_API_KEY
+            }
+        )
+    except Exception as e:
+        logging.error(f"Failed to get secondary market rate for {token_address} on {network}: {str(e)}")
+        return -1
 
     if response.status_code != 200:
         logging.error(f"{response.status_code} error from 1inch: {response.reason}")
-        return 0
+        return -1
 
     data = response.json()
-    return int(data['toTokenAmount'])
+    return int(data['toAmount'])
+
 
 def get_premium(primary_market_price, secondary_market_price) -> float:
     """
@@ -107,43 +132,52 @@ def get_premium(primary_market_price, secondary_market_price) -> float:
 def save_data_to_db(data) -> None:
     """
     Saves data to the database
-    
+
     Args:
         data (dict): The data to save
-        
+
     Returns:
         None
     """
-    session = Session()
-    try:
-        # Create an instance of your model
-        data_model = LsdPriceModel(**data)
-        
-        # Add the instance to the session
-        session.add(data_model)
-        
-        # Commit the session to save the data
-        session.commit()
-    except Exception as e:
-        session.rollback()
-        logging.error("Failed to save data:", str(e))
-    finally:
-        session.close()
+    if not DRY_RUN:
+        session = Session()
+        try:
+            # Create an instance of your model
+            data_model = LsdPriceModel(**data)
 
-def main():
-    tokens_config = load_config()
+            # Add the instance to the session
+            session.add(data_model)
+
+            # Commit the session to save the data
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logging.error("Failed to save data:", str(e))
+        finally:
+            session.close()
+    return
+
+
+def fetch_and_save_data(tokens_config):
     primary_market_price = 0
     now = datetime.datetime.now()
 
     for token in tokens_config:
-        if "ethereum" in token["token_addresses"] and "native_contract_abi" in token and "get_exchange_rate_function_name" in token:
-                token_address = token["token_addresses"]["ethereum"]
-                network = "ethereum"
-                contract = w3.eth.contract(address=token_address, abi=token["native_contract_abi"])
-                get_exchange_rate_function = contract.functions[token["get_exchange_rate_function_name"]]
-                primary_market_price = get_exchange_rate_function().call()
-                logging.info(f"Primary market price for {token['token_name']} on {network} is {eth_price_to_sting(primary_market_price)} ETH")
-
+        if (
+            "ethereum" in token["token_addresses"]
+            and "native_contract_abi" in token
+            and "get_exchange_rate_function_name" in token
+        ):
+            token_address = token["token_addresses"]["ethereum"]
+            network = "ethereum"
+            contract = w3.eth.contract(address=token_address, abi=token["native_contract_abi"])
+            get_exchange_rate_function = contract.functions[token["get_exchange_rate_function_name"]]
+            primary_market_price = get_exchange_rate_function().call()
+            if primary_market_price >= 0:
+                logging.info(
+                    f"Primary market price for {token['token_name']} on {network} is "
+                    f"{eth_price_to_string(primary_market_price)} ETH"
+                )
                 save_data_to_db({
                     'timestamp': now,
                     'token_name': token['token_name'],
@@ -158,21 +192,25 @@ def main():
             token_address = token["token_addresses"][network]
             price = get_secondary_market_rate(token_address, network)
             premium = get_premium(primary_market_price, price)
-            logging.info(f"{token['token_name']} on {network} is {eth_price_to_sting(price)} ETH -> {abs(premium*100):.3f}% {'premium' if premium >= 0 else 'discount'}")
 
-            save_data_to_db({
-                'timestamp': now,
-                'token_name': token['token_name'],
-                'price_eth': w3.from_wei(price, "ether"),
-                'price_usd': None,
-                'network': network,
-                'is_primary_market': False,
-                'premium': premium
-            })
+            if price >= 0:
+                logging.info(
+                    f"{token['token_name']} on {network} is {eth_price_to_string(price)} ETH -> "
+                    f"{abs(premium * 100):.3f}% {'premium' if premium >= 0 else 'discount'}"
+                )
+                save_data_to_db({
+                    'timestamp': now,
+                    'token_name': token['token_name'],
+                    'price_eth': w3.from_wei(price, "ether"),
+                    'price_usd': None,
+                    'network': network,
+                    'is_primary_market': False,
+                    'premium': premium
+                })
 
 
 if __name__ == "__main__":
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    logging.info(f"Time taken: {end_time - start_time:.2f} seconds")
+    tokens_config = load_config()
+    while True:
+        fetch_and_save_data(tokens_config)
+        time.sleep(5 * 60)
