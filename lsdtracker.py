@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import sys
 import time
 
 import requests
@@ -28,17 +29,15 @@ CHAIN_ID_MAPPING = {
     "polygon": 137,
     "optimism": 10,
     "gnosis": 100,
-    "base": 8453
+    "base": 8453,
 }
 
-proxies = {
-    'http': HTTP_PROXY,
-    'https': HTTP_PROXY
-}
+proxies = {"http": HTTP_PROXY, "https": HTTP_PROXY}
 
 logging.basicConfig(
     level=LOG_LEVEL,
-    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    stream=sys.stdout,
 )
 
 # Create the SQLAlchemy engine
@@ -55,7 +54,8 @@ class LsdPriceModel(Base):
     """
     Represents a price of a token on a network at a given time in the database
     """
-    __tablename__ = 'prices'
+
+    __tablename__ = "prices"
 
     timestamp = Column(DateTime(timezone=True), primary_key=True)
     token_name = Column(String(10), primary_key=True)
@@ -70,7 +70,7 @@ def load_config():
     """
     Loads config from lsd.json
     """
-    with open('lsd.json') as f:
+    with open("lsd.json") as f:
         return json.load(f)
 
 
@@ -78,8 +78,9 @@ def eth_price_to_string(eth_amount: int) -> str:
     """
     Converts an ETH amount in wei to a string
     """
-    rem: int = eth_amount % 10 ** 12
-    return w3.from_wei(eth_amount - rem, 'ether')
+    rem: int = eth_amount % 10**12
+    return w3.from_wei(eth_amount - rem, "ether")
+
 
 def get_eth_address_from_network(network: str) -> str:
     """
@@ -112,22 +113,20 @@ def get_secondary_market_rate(token_address: str, network: str) -> int:
     """
     time.sleep(1)  # 1inch API rate limit
     quote_params = {
-        'src': token_address,
-        'dst': get_eth_address_from_network(network),
-        'amount': str(ONE_ETHER_STR)
+        "src": token_address,
+        "dst": get_eth_address_from_network(network),
+        "amount": str(ONE_ETHER_STR),
     }
     url = f"https://api.1inch.dev/swap/v5.2/{CHAIN_ID_MAPPING[network]}/quote?{requests.compat.urlencode(quote_params)}"
 
     try:
         response = requests.get(
-            url,
-            proxies=proxies,
-            headers={
-                "Authorization": ONE_INCH_API_KEY
-            }
+            url, proxies=proxies, headers={"Authorization": ONE_INCH_API_KEY}
         )
     except Exception as e:
-        logging.error(f"Failed to get secondary market rate for {token_address} on {network}: {str(e)}")
+        logging.error(
+            f"Failed to get secondary market rate for {token_address} on {network}: {str(e)}"
+        )
         return -1
 
     if response.status_code != 200:
@@ -135,7 +134,7 @@ def get_secondary_market_rate(token_address: str, network: str) -> int:
         return -1
 
     data = response.json()
-    return int(data['toAmount'])
+    return int(data["toAmount"])
 
 
 def get_premium(primary_market_price, secondary_market_price) -> float:
@@ -190,23 +189,29 @@ def fetch_and_save_data(tokens_config):
         ):
             token_address = token["token_addresses"]["ethereum"]
             network = "ethereum"
-            contract = w3.eth.contract(address=token_address, abi=token["native_contract_abi"])
-            get_exchange_rate_function = contract.functions[token["get_exchange_rate_function_name"]]
+            contract = w3.eth.contract(
+                address=token_address, abi=token["native_contract_abi"]
+            )
+            get_exchange_rate_function = contract.functions[
+                token["get_exchange_rate_function_name"]
+            ]
             primary_market_price = get_exchange_rate_function().call()
             if primary_market_price >= 0:
                 logging.info(
                     f"Primary market price for {token['token_name']} on {network} is "
                     f"{eth_price_to_string(primary_market_price)} ETH"
                 )
-                save_data_to_db({
-                    'timestamp': now,
-                    'token_name': token['token_name'],
-                    'price_eth': w3.from_wei(primary_market_price, "ether"),
-                    'price_usd': None,
-                    'network': network,
-                    'is_primary_market': True,
-                    'premium': 0
-                })
+                save_data_to_db(
+                    {
+                        "timestamp": now,
+                        "token_name": token["token_name"],
+                        "price_eth": w3.from_wei(primary_market_price, "ether"),
+                        "price_usd": None,
+                        "network": network,
+                        "is_primary_market": True,
+                        "premium": 0,
+                    }
+                )
 
         for network in token["token_addresses"]:
             token_address = token["token_addresses"][network]
@@ -218,15 +223,17 @@ def fetch_and_save_data(tokens_config):
                     f"{token['token_name']} on {network} is {eth_price_to_string(price)} ETH -> "
                     f"{abs(premium * 100):.3f}% {'premium' if premium >= 0 else 'discount'}"
                 )
-                save_data_to_db({
-                    'timestamp': now,
-                    'token_name': token['token_name'],
-                    'price_eth': w3.from_wei(price, "ether"),
-                    'price_usd': None,
-                    'network': network,
-                    'is_primary_market': False,
-                    'premium': premium
-                })
+                save_data_to_db(
+                    {
+                        "timestamp": now,
+                        "token_name": token["token_name"],
+                        "price_eth": w3.from_wei(price, "ether"),
+                        "price_usd": None,
+                        "network": network,
+                        "is_primary_market": False,
+                        "premium": premium,
+                    }
+                )
 
 
 if __name__ == "__main__":
