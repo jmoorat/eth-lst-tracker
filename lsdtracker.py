@@ -49,7 +49,6 @@ Session = sessionmaker(bind=engine) if not DRY_RUN else None
 # Create a base class for declarative models
 Base = declarative_base()
 
-
 class LsdPriceModel(Base):
     """
     Represents a price of a token on a network at a given time in the database
@@ -68,9 +67,9 @@ class LsdPriceModel(Base):
 
 def load_config():
     """
-    Loads config from lsd.json
+    Loads config from config.json
     """
-    with open("lsd.json") as f:
+    with open("config.json") as f:
         return json.load(f)
 
 
@@ -80,24 +79,6 @@ def eth_price_to_string(eth_amount: int) -> str:
     """
     rem: int = eth_amount % 10**12
     return w3.from_wei(eth_amount - rem, "ether")
-
-
-def get_eth_address_from_network(network: str) -> str:
-    """
-    Returns the ETH/WETH token address for a network
-
-    Args:
-        network (str): The network we want the ETH token address for
-
-    Returns:
-        str: The ETH token address
-    """
-    if network == "polygon":
-        return WETH_ADDRESS_POLYGON
-    elif network == "gnosis":
-        return WETH_ADDRESS_GNOSIS
-    else:
-        return ETH_ADDRESS
 
 
 def get_secondary_market_rate(token_address: str, network: str) -> int:
@@ -114,7 +95,7 @@ def get_secondary_market_rate(token_address: str, network: str) -> int:
     time.sleep(1)  # 1inch API rate limit
     quote_params = {
         "src": token_address,
-        "dst": get_eth_address_from_network(network),
+        "dst": config["chains"][network]["eth_token_address"],
         "amount": str(ONE_ETHER_STR),
     }
     url = f"https://api.1inch.dev/swap/v5.2/{CHAIN_ID_MAPPING[network]}/quote?{requests.compat.urlencode(quote_params)}"
@@ -177,11 +158,11 @@ def save_data_to_db(data) -> None:
     return
 
 
-def fetch_and_save_data(tokens_config):
+def fetch_and_save_data():
     primary_market_price = 0
     now = datetime.datetime.now()
 
-    for token in tokens_config:
+    for token in config["lsd_tokens"]:
         if (
             "ethereum" in token["token_addresses"]
             and "native_contract_abi" in token
@@ -236,8 +217,9 @@ def fetch_and_save_data(tokens_config):
                 )
 
 
+config = load_config()
+
 if __name__ == "__main__":
-    tokens_config = load_config()
     while True:
-        fetch_and_save_data(tokens_config)
+        fetch_and_save_data()
         time.sleep(5 * 60)
