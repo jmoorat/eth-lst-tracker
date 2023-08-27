@@ -6,6 +6,7 @@ import sys
 import time
 
 import requests
+import schedule
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Numeric, String, Boolean, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -20,14 +21,8 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 HTTP_PROXY = os.getenv("HTTP_PROXY")
 DRY_RUN = os.getenv("DRY_RUN", "false").lower() == "true"
 ONE_INCH_API_KEY = os.getenv("ONE_INCH_API_KEY")
-CHAIN_ID_MAPPING = {
-    "ethereum": 1,
-    "arbitrum": 42161,
-    "polygon": 137,
-    "optimism": 10,
-    "gnosis": 100,
-    "base": 8453,
-}
+LONG_RUN = os.getenv("LONG_RUN", "false").lower() == "true"
+SCHEDULE_MINUTES = int(os.getenv("SCHEDULE_MINUTES", "5"))
 
 proxies = {"http": HTTP_PROXY, "https": HTTP_PROXY}
 
@@ -95,7 +90,7 @@ def get_secondary_market_rate(token_address: str, network: str) -> int:
         "dst": config["chains"][network]["eth_token_address"],
         "amount": str(ONE_ETHER_STR),
     }
-    url = f"https://api.1inch.dev/swap/v5.2/{CHAIN_ID_MAPPING[network]}/quote?{requests.compat.urlencode(quote_params)}"
+    url = f"https://api.1inch.dev/swap/v5.2/{config['chains'][network]['chain_id']}/quote?{requests.compat.urlencode(quote_params)}"
 
     try:
         response = requests.get(
@@ -155,7 +150,7 @@ def save_data_to_db(data) -> None:
     return
 
 
-def fetch_and_save_data():
+def main():
     primary_market_price = 0
     now = datetime.datetime.now()
 
@@ -217,6 +212,10 @@ def fetch_and_save_data():
 config = load_config()
 
 if __name__ == "__main__":
-    while True:
-        fetch_and_save_data()
-        time.sleep(5 * 60)
+    if not LONG_RUN:
+        main()
+    else:
+        schedule.every(SCHEDULE_MINUTES).minutes.do(main)
+        while (LONG_RUN):
+            schedule.run_pending()
+            time.sleep(1)
