@@ -45,7 +45,7 @@ Session = sessionmaker(bind=engine) if not DRY_RUN else None
 Base = declarative_base()
 
 # Initialize the secondary market price fetcher
-price_fetcher: SecondaryMarketPriceFetcher = OneInchPriceFetcher(
+secondary_market_price_fetcher: SecondaryMarketPriceFetcher = OneInchPriceFetcher(
     ONE_INCH_API_KEY, HTTP_PROXY
 )
 
@@ -103,7 +103,7 @@ def save_data_to_db(data) -> None:
     return
 
 
-def main():
+def main(price_fetcher: SecondaryMarketPriceFetcher):
     primary_market_price = 0
     now = datetime.datetime.now()
 
@@ -170,9 +170,9 @@ config = load_config()
 
 if __name__ == "__main__":
     if not LONG_RUN:
-        main()
+        main(secondary_market_price_fetcher)
     else:
-        schedule.every(SCHEDULE_MINUTES).minutes.do(main)
+        schedule.every(SCHEDULE_MINUTES).minutes.do(main, secondary_market_price_fetcher)
         while (LONG_RUN):
             schedule.run_pending()
             time.sleep(1)
