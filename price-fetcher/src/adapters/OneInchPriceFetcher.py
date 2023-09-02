@@ -1,7 +1,8 @@
-from src.ports.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher, UnsupportedChainException, \
-    CannotGetPriceException
 import requests
 import time
+
+from ports.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher, UnsupportedChainException, \
+    CannotGetPriceException
 
 
 class OneInchPriceFetcher(SecondaryMarketPriceFetcher):

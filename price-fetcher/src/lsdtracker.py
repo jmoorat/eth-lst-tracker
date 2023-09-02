@@ -2,12 +2,10 @@ import datetime
 import json
 import logging
 import os
+from argparse import ArgumentParser
 import sys
 import time
-
-import requests
 import schedule
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, Column, Numeric, String, Boolean, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
 from web3 import Web3
@@ -15,12 +13,8 @@ from web3 import Web3
 from adapters.OneInchPriceFetcher import OneInchPriceFetcher
 from adapters.ParaswapPriceFetcher import ParaswapPriceFetcher
 from ports.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher
-from src.utils import eth_price_to_string, get_premium, chains
+from utils import eth_price_to_string, get_premium, chains
 
-load_dotenv()
-
-w3 = Web3(Web3.HTTPProvider(os.environ.get("WEB3_PROVIDER")))
-ONE_ETHER_STR: str = w3.to_wei(1, "ether")
 DATABASE_URL = os.getenv("DATABASE_URL")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 HTTP_PROXY = os.getenv("HTTP_PROXY")
@@ -44,11 +38,6 @@ Session = sessionmaker(bind=engine) if not DRY_RUN else None
 # Create a base class for declarative models
 Base = declarative_base()
 
-# Initialize the secondary market price fetcher
-secondary_market_price_fetcher: SecondaryMarketPriceFetcher = OneInchPriceFetcher(
-    ONE_INCH_API_KEY, HTTP_PROXY
-)
-
 
 class LsdPriceModel(Base):
     """
@@ -66,11 +55,11 @@ class LsdPriceModel(Base):
     premium = Column(Numeric(6, 5))
 
 
-def load_config():
+def load_config(config_file_path: str):
     """
-    Loads config from config.json
+    Loads config
     """
-    with open("config.json") as f:
+    with open(config_file_path) as f:
         return json.load(f)
 
 
@@ -103,11 +92,17 @@ def save_data_to_db(data) -> None:
     return
 
 
-def main(price_fetcher: SecondaryMarketPriceFetcher):
+def main(
+        config: dict,
+        web3_provider: Web3,
+        price_fetcher: SecondaryMarketPriceFetcher
+):
     primary_market_price = 0
     now = datetime.datetime.now()
 
     for token in config["lsd_tokens"]:
+
+        # Get primary market price
         if (
             "ethereum" in token["token_addresses"]
             and "native_contract_abi" in token
@@ -115,7 +110,7 @@ def main(price_fetcher: SecondaryMarketPriceFetcher):
         ):
             token_address = token["token_addresses"]["ethereum"]
             chain = "ethereum"
-            contract = w3.eth.contract(
+            contract = web3_provider.eth.contract(
                 address=token_address, abi=token["native_contract_abi"]
             )
             get_exchange_rate_function = contract.functions[
@@ -131,7 +126,7 @@ def main(price_fetcher: SecondaryMarketPriceFetcher):
                     {
                         "timestamp": now,
                         "token_name": token["token_name"],
-                        "price_eth": w3.from_wei(primary_market_price, "ether"),
+                        "price_eth": web3_provider.from_wei(primary_market_price, "ether"),
                         "price_usd": None,
                         "network": chain,
                         "is_primary_market": True,
@@ -139,6 +134,7 @@ def main(price_fetcher: SecondaryMarketPriceFetcher):
                     }
                 )
 
+        # Get secondary market prices on given chains
         for chain in token["token_addresses"]:
             token_address = token["token_addresses"][chain]
             price = price_fetcher.get_price(
@@ -157,7 +153,7 @@ def main(price_fetcher: SecondaryMarketPriceFetcher):
                     {
                         "timestamp": now,
                         "token_name": token["token_name"],
-                        "price_eth": w3.from_wei(price, "ether"),
+                        "price_eth": web3_provider.from_wei(price, "ether"),
                         "price_usd": None,
                         "network": chain,
                         "is_primary_market": False,
@@ -166,13 +162,23 @@ def main(price_fetcher: SecondaryMarketPriceFetcher):
                 )
 
 
-config = load_config()
-
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("-c", "--config", help="config file path")
+    args = parser.parse_args()
+    if not args.config:
+        parser.error("A config file is required")
+
+    loaded_config = load_config(args.config)
+    w3 = Web3(Web3.HTTPProvider(os.environ.get("WEB3_PROVIDER")))
+    secondary_market_price_fetcher: SecondaryMarketPriceFetcher = OneInchPriceFetcher(
+        ONE_INCH_API_KEY, HTTP_PROXY
+    )
+
     if not LONG_RUN:
-        main(secondary_market_price_fetcher)
+        main(loaded_config, w3, secondary_market_price_fetcher)
     else:
-        schedule.every(SCHEDULE_MINUTES).minutes.do(main, secondary_market_price_fetcher)
+        schedule.every(SCHEDULE_MINUTES).minutes.do(main, loaded_config, w3, secondary_market_price_fetcher)
         while (LONG_RUN):
             schedule.run_pending()
             time.sleep(1)
