@@ -6,13 +6,13 @@ from argparse import ArgumentParser
 import sys
 import time
 import schedule
-from sqlalchemy import create_engine, Column, Numeric, String, Boolean, DateTime
-from sqlalchemy.orm import sessionmaker, declarative_base
 from web3 import Web3
 
-from adapters.OneInchPriceFetcher import OneInchPriceFetcher
-from adapters.ParaswapPriceFetcher import ParaswapPriceFetcher
-from ports.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher
+from data_storage.DataSaver import DataSaver
+from data_storage.FakeDataSaver import FakeDataSaver
+from data_storage.PostgresDataSaver import PostgresDataSaver
+from price_fetcher.OneInchPriceFetcher import OneInchPriceFetcher
+from price_fetcher.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher
 from utils import eth_price_to_string, get_premium, chains
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -29,31 +29,6 @@ logging.basicConfig(
     stream=sys.stdout,
 )
 
-# Create the SQLAlchemy engine
-engine = create_engine(DATABASE_URL) if not DRY_RUN else None
-
-# Create a session factory
-Session = sessionmaker(bind=engine) if not DRY_RUN else None
-
-# Create a base class for declarative models
-Base = declarative_base()
-
-
-class LsdPriceModel(Base):
-    """
-    Represents a price of a token on a network at a given time in the database
-    """
-
-    __tablename__ = "prices"
-
-    timestamp = Column(DateTime(timezone=True), primary_key=True)
-    token_name = Column(String(10), primary_key=True)
-    network = Column(String(20), primary_key=True)
-    price_eth = Column(Numeric(20, 18))
-    price_usd = Column(Numeric(16, 2))
-    is_primary_market = Column(Boolean)
-    premium = Column(Numeric(6, 5))
-
 
 def load_config(config_file_path: str):
     """
@@ -63,39 +38,11 @@ def load_config(config_file_path: str):
         return json.load(f)
 
 
-def save_data_to_db(data) -> None:
-    """
-    Saves data to the database
-
-    Args:
-        data (dict): The data to save
-
-    Returns:
-        None
-    """
-    if not DRY_RUN:
-        session = Session()
-        try:
-            # Create an instance of your model
-            data_model = LsdPriceModel(**data)
-
-            # Add the instance to the session
-            session.add(data_model)
-
-            # Commit the session to save the data
-            session.commit()
-        except Exception as e:
-            session.rollback()
-            logging.error("Failed to save data:", str(e))
-        finally:
-            session.close()
-    return
-
-
 def main(
         config: dict,
         web3_provider: Web3,
-        price_fetcher: SecondaryMarketPriceFetcher
+        price_fetcher: SecondaryMarketPriceFetcher,
+        data_saver: DataSaver
 ):
     primary_market_price = 0
     now = datetime.datetime.now()
@@ -122,16 +69,14 @@ def main(
                     f"Primary market price for {token['token_name']} on {chain} is "
                     f"{eth_price_to_string(primary_market_price)} ETH"
                 )
-                save_data_to_db(
-                    {
-                        "timestamp": now,
-                        "token_name": token["token_name"],
-                        "price_eth": web3_provider.from_wei(primary_market_price, "ether"),
-                        "price_usd": None,
-                        "network": chain,
-                        "is_primary_market": True,
-                        "premium": 0,
-                    }
+                data_saver.save_data_point(
+                    timestamp=now,
+                    token_name=token["token_name"],
+                    price_eth=web3_provider.from_wei(primary_market_price, "ether"),
+                    price_usd=None,
+                    network=chain,
+                    is_primary_market=True,
+                    premium=0,
                 )
 
         # Get secondary market prices on given chains
@@ -149,16 +94,14 @@ def main(
                     f"{token['token_name']} on {chain} is {eth_price_to_string(price)} ETH -> "
                     f"{abs(premium * 100):.3f}% {'premium' if premium >= 0 else 'discount'}"
                 )
-                save_data_to_db(
-                    {
-                        "timestamp": now,
-                        "token_name": token["token_name"],
-                        "price_eth": web3_provider.from_wei(price, "ether"),
-                        "price_usd": None,
-                        "network": chain,
-                        "is_primary_market": False,
-                        "premium": premium,
-                    }
+                data_saver.save_data_point(
+                    timestamp=now,
+                    token_name=token["token_name"],
+                    price_eth=web3_provider.from_wei(price, "ether"),
+                    price_usd=None,
+                    network=chain,
+                    is_primary_market=False,
+                    premium=premium
                 )
 
 
@@ -174,11 +117,16 @@ if __name__ == "__main__":
     secondary_market_price_fetcher: SecondaryMarketPriceFetcher = OneInchPriceFetcher(
         ONE_INCH_API_KEY, HTTP_PROXY
     )
+    if DRY_RUN:
+        data_saver: DataSaver = FakeDataSaver()
+    else:
+        data_saver: DataSaver = PostgresDataSaver(DATABASE_URL)
 
     if not LONG_RUN:
-        main(loaded_config, w3, secondary_market_price_fetcher)
+        main(loaded_config, w3, secondary_market_price_fetcher, data_saver)
     else:
-        schedule.every(SCHEDULE_MINUTES).minutes.do(main, loaded_config, w3, secondary_market_price_fetcher)
+        schedule.every(SCHEDULE_MINUTES).minutes.do(main, loaded_config, w3, secondary_market_price_fetcher, data_saver)
+        logging.info(f"Running every {SCHEDULE_MINUTES} minutes")
         while (LONG_RUN):
             schedule.run_pending()
             time.sleep(1)

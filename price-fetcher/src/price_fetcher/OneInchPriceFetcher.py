@@ -1,7 +1,7 @@
 import requests
 import time
 
-from ports.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher, UnsupportedChainException, \
+from price_fetcher.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher, UnsupportedChainException, \
     CannotGetPriceException
 
 
