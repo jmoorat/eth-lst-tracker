@@ -24,10 +24,10 @@ def get_last_prices(db: Session = Depends(get_db)):
 
 
 @app.get("/prices/{token_name}")
-def get_price_history(token_name: str, network: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), is_primary_market: bool = True):
+def get_price_history(token_name: str, network: str, db: Session = Depends(get_db), is_primary_market: bool = True):
     if network != "ethereum":
         is_primary_market = False
-    result = crud.get_price_history(db, token_name, network, is_primary_market, skip, limit)
+    result = crud.get_price_history(db, token_name, network, is_primary_market)
 
     return result
 
@@ -37,8 +37,6 @@ def get_last_price(token_name: str, network: str, db: Session = Depends(get_db),
     if network != "ethereum":
         is_primary_market = False
     last_prices = crud.get_last_price(db, token_name, network, is_primary_market)
-
-    # if not last_prices return FastAPI 404 exception
 
     if not last_prices:
         raise HTTPException(status_code=404, detail="Item not found")
