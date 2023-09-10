@@ -24,19 +24,30 @@ def get_last_prices(db: Session = Depends(get_db)):
 
 
 @app.get("/prices/{token_name}")
-def get_price_history(token_name: str, network: str, db: Session = Depends(get_db), is_primary_market: bool = True):
-    if network != "ethereum":
-        is_primary_market = False
-    result = crud.get_price_history(db, token_name, network, is_primary_market)
+def get_price_history(
+        token_name: str,
+        network: str = "ethereum",
+        primary_market: bool = False,
+        db: Session = Depends(get_db)
+):
+    if primary_market and network != "ethereum":
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
+    result = crud.get_price_history(db, token_name, network, primary_market)
 
     return result
 
 
 @app.get("/prices/{token_name}/last")
-def get_last_price(token_name: str, network: str, db: Session = Depends(get_db), is_primary_market: bool = True):
-    if network != "ethereum":
-        is_primary_market = False
-    last_prices = crud.get_last_price(db, token_name, network, is_primary_market)
+def get_last_price(
+        token_name: str,
+        network: str = "ethereum",
+        primary_market: bool = False,
+        db: Session = Depends(get_db)
+):
+    last_prices = crud.get_last_price(db, token_name, network, primary_market)
+
+    if primary_market and network != "ethereum":
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
     if not last_prices:
         raise HTTPException(status_code=404, detail="Item not found")
