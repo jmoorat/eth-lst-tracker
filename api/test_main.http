@@ -1,11 +1,33 @@
-# Test your FastAPI endpoints
-
-GET http://127.0.0.1:8000/
+GET http://127.0.0.1:8000/prices
 Accept: application/json
 
 ###
 
-GET http://127.0.0.1:8000/hello/User
+GET http://127.0.0.1:8000/prices/rETH
 Accept: application/json
 
 ###
+
+GET http://127.0.0.1:8000/prices/rETH?primary_market=true
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/prices/rETH?network=arbitrum
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/prices/rETH?network=optimism
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/prices/rETH/last
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/prices/rETH/last?network=optimism
+Accept: application/json
+
