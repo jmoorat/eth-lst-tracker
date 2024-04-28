@@ -118,7 +118,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("-c", "--config", help="config file path")
     parser.add_argument("-d", "--dry-run", help="dry run", action="store_true")
-    parser.add_argument("-l", "--long-run", help="long run", action="store_true")
+    parser.add_argument("-l", "--long-run", help="long run", action="store_true",default=False if os.getenv("LONG_RUN") == None else os.getenv("LONG_RUN") == "true")
     parser.add_argument("-s", "--schedule", help="Number of minutes to wait between each run", default=5, type=int)
     args = parser.parse_args()
     if not args.config:

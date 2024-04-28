@@ -1,18 +1,12 @@
 FROM ubuntu:latest
 
 ARG LOG_LEVEL=INFO
-ARG DRY_RUN=false
-ARG LONG_RUN=true
-ARG SCHEDULE_MINUTES=5
 
 ENV DATABASE_URL="" \
     LOG_LEVEL=$LOG_LEVEL \
     WEB3_PROVIDER="" \
     HTTP_PROXY="" \
-    DRY_RUN=$DRY_RUN \
-    ONE_INCH_API_KEY="" \
-    LONG_RUN=$LONG_RUN \
-    SCHEDULE_MINUTES=$SCHEDULE_MINUTES
+    ONE_INCH_API_KEY=""
 
 RUN apt-get update && apt-get install -y \
     python3 \
