@@ -8,7 +8,12 @@ from .crud import QueryableTimeBucket
 from .database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
-app = FastAPI()
+app = FastAPI(
+    title="LSDTracker API",
+    summary="API to track prices and premiums of various Ethereum Liquid Staking Derivatives (LSD).",
+    docs_url=None,
+    redoc_url="/docs"
+)
 
 
 class PriceHistoryResolutionRequest(str, Enum):
