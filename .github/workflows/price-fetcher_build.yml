@@ -14,9 +14,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./price-fetcher
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -31,7 +28,7 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: .
-        file: Dockerfile
+        context: ./price-fetcher
+        file: ./price-fetcher/Dockerfile
         push: true
         tags: ${{ secrets.DOCKER_REGISTRY_ENDPOINT }}/${{ env.IMAGE_NAME }}:latest
