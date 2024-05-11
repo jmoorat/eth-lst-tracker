@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'price-fetcher/**'
+  workflow_dispatch:
+
 env:
   IMAGE_NAME: ${{ github.repository }}-price-fetcher
 
