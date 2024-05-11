@@ -8,9 +8,6 @@ on:
       - 'price-fetcher/**'
   workflow_dispatch:
 
-env:
-  IMAGE_NAME: ${{ github.repository }}-price-fetcher
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,4 +28,4 @@ jobs:
         context: ./price-fetcher
         file: ./price-fetcher/Dockerfile
         push: true
-        tags: ${{ secrets.DOCKER_REGISTRY_ENDPOINT }}/${{ env.IMAGE_NAME }}:latest
+        tags: ${{ secrets.DOCKER_REGISTRY_ENDPOINT }}/price-fetcher:latest
