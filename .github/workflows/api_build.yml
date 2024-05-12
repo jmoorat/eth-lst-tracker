@@ -1,0 +1,17 @@
+name: api - build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'api/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/docker_build_push.yml
+    with:
+      project_path: ./api
+      dockerfile_path: ./api/Dockerfile
+      image_name: api
