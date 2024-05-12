@@ -65,14 +65,14 @@ def get_last_price(db: Session, token_name: str, network: str, is_primary_market
 def get_price_history(db: Session, token_name: str, network: str, is_primary_market: bool, time_bucket: QueryableTimeBucket):
     sql = text("""
         SELECT
-            time_bucket(:time_bucket, timestamp) as timestamp,
+            time_bucket(:time_bucket, timestamp) as time_bucket,
             avg(price_eth) as price_eth,
             round(avg(premium)*100, 3) as premium_percentage
         FROM prices
         WHERE timestamp > now() - INTERVAL :time_window
         AND token_name = :token_name AND network = :network AND is_primary_market = :is_primary_market
-        GROUP BY timestamp, token_name, network, is_primary_market
-        ORDER BY timestamp DESC;
+        GROUP BY time_bucket, token_name, network, is_primary_market
+        ORDER BY time_bucket DESC;
     """)
     result = db.execute(sql, {
         'token_name': token_name,

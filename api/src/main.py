@@ -85,7 +85,12 @@ def get_price_history(
         token_name=token_name,
         network=network,
         is_primary_market=primary_market,
-        prices=[PriceHistoryResponse(**r) for r in result])
+        prices=[PriceHistoryResponse(
+            timestamp=r["time_bucket"],
+            price_eth=r["price_eth"],
+            premium_percentage=r["premium_percentage"]
+        ) for r in result]
+        )
 
     return response
 
