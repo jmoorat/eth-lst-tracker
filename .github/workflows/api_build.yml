@@ -15,3 +15,4 @@ jobs:
       project_path: ./api
       dockerfile_path: ./api/Dockerfile
       image_name: api
+    secrets: inherit
