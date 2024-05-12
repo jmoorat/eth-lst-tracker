@@ -1,7 +1,9 @@
+from datetime import datetime
 from enum import Enum
 
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from . import crud, models
 from .crud import QueryableTimeBucket
@@ -32,6 +34,27 @@ resolution_request_to_time_bucket = {
 }
 
 
+class PriceHistoryResponse(BaseModel):
+    timestamp: datetime
+    price_eth: float
+    premium_percentage: float
+
+
+class PriceResponse(BaseModel):
+    token_name: str
+    network: str
+    is_primary_market: bool
+    prices: list[PriceHistoryResponse]
+
+
+class FullPriceResponse(BaseModel):
+    timestamp: datetime
+    token_name: str
+    network: str
+    is_primary_market: bool
+    price_eth: float
+    premium_percentage: float
+
 # Dependency
 def get_db():
     db = SessionLocal()
@@ -42,9 +65,9 @@ def get_db():
 
 
 @app.get("/prices")
-def get_last_prices(db: Session = Depends(get_db)):
+def get_last_prices(db: Session = Depends(get_db)) -> list[FullPriceResponse]:
     last_prices = crud.get_last_prices(db)
-    return last_prices
+    return [FullPriceResponse(**r) for r in last_prices]
 
 
 @app.get("/prices/{token_name}/history")
@@ -54,12 +77,17 @@ def get_price_history(
         primary_market: bool = False,
         resolution: PriceHistoryResolutionRequest = PriceHistoryResolutionRequest.ONE_DAY,
         db: Session = Depends(get_db)
-):
+) -> PriceResponse:
     if primary_market and network != "ethereum":
         raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
     result = crud.get_price_history(db, token_name, network, primary_market, resolution_request_to_time_bucket[resolution])
+    response: PriceResponse = PriceResponse(
+        token_name=token_name,
+        network=network,
+        is_primary_market=primary_market,
+        prices=[PriceHistoryResponse(**r) for r in result])
 
-    return result
+    return response
 
 
 @app.get("/prices/{token_name}/last")
@@ -68,13 +96,18 @@ def get_last_price(
         network: str = "ethereum",
         primary_market: bool = False,
         db: Session = Depends(get_db)
-):
-    last_prices = crud.get_last_price(db, token_name, network, primary_market)
+) -> FullPriceResponse:
+    last_price = crud.get_last_price(db, token_name, network, primary_market)
 
     if primary_market and network != "ethereum":
         raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
-    if not last_prices:
+    if not last_price:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    return last_prices
+    return FullPriceResponse(
+        token_name=token_name,
+        network=network,
+        is_primary_market=primary_market,
+        **last_price
+    )
