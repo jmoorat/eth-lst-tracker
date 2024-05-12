@@ -15,9 +15,9 @@ class QueryableTimeBucket(str, Enum):
 interval_limits_per_time_buckets = {
     QueryableTimeBucket.FIVE_MINUTES: "1 day",
     QueryableTimeBucket.ONE_HOUR: "1 week",
-    QueryableTimeBucket.ONE_DAY: "1 month",
-    QueryableTimeBucket.ONE_WEEK: "6 months",
-    QueryableTimeBucket.ONE_MONTH: "1 year"
+    QueryableTimeBucket.ONE_DAY: "6 months",
+    QueryableTimeBucket.ONE_WEEK: "1 year",
+    QueryableTimeBucket.ONE_MONTH: "5 years"
 }
 
 
