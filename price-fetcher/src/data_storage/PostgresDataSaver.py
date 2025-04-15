@@ -10,7 +10,7 @@ from data_storage.DataSaver import DataSaver, FailedToSaveDataPointException
 Base = declarative_base()
 
 
-class LsdPriceDataPoint(Base):
+class LstPriceDataPoint(Base):
     """
     Represents a price of a token on a network at a given time in the database
     """
@@ -43,7 +43,7 @@ class PostgresDataSaver(DataSaver):
     ):
         session = self.session_maker()
         try:
-            lsd_price_data_point = LsdPriceDataPoint(
+            lst_price_data_point = LstPriceDataPoint(
                 timestamp=timestamp,
                 token_name=token_name,
                 price_eth=price_eth,
@@ -52,7 +52,7 @@ class PostgresDataSaver(DataSaver):
                 is_primary_market=is_primary_market,
                 premium=premium
             )
-            session.add(lsd_price_data_point)
+            session.add(lst_price_data_point)
             session.commit()
         except Exception as e:
             session.rollback()

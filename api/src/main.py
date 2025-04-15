@@ -11,8 +11,8 @@ from .database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
-    title="LSDTracker API",
-    summary="API to track prices and premiums of various Ethereum Liquid Staking Derivatives (LSD).",
+    title="ETH LST tracker API",
+    summary="API to track prices and premiums of various Ethereum Liquid Staking Tokens (LST).",
     docs_url=None,
     redoc_url="/docs"
 )

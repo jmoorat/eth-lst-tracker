@@ -2,7 +2,7 @@ from .database import Base
 from sqlalchemy import Column, Numeric, String, Boolean, DateTime
 
 
-class LsdPrice(Base):
+class LstPrice(Base):
     """
     Represents a price of a token on a network at a given time in the database
     """

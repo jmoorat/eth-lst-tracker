@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class LsdPrice(BaseModel):
+class LstPrice(BaseModel):
     timestamp: str
     token_name: str
     network: str

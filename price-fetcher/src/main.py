@@ -40,7 +40,7 @@ def main(
     primary_market_price = 0
     now = datetime.datetime.now()
 
-    for token in config["lsd_tokens"]:
+    for token in config["tokens"]:
 
         # Get primary market price
         if (
