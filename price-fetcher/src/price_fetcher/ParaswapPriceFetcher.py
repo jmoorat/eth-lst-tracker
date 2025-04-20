@@ -1,8 +1,12 @@
-import requests
 import time
 
-from price_fetcher.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher, UnsupportedChainException, \
-    CannotGetPriceException
+import requests
+
+from price_fetcher.SecondaryMarketPriceFetcher import (
+    CannotGetPriceException,
+    SecondaryMarketPriceFetcher,
+    UnsupportedChainException,
+)
 
 
 class ParaswapPriceFetcher(SecondaryMarketPriceFetcher):

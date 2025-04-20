@@ -2,20 +2,24 @@ import datetime
 import json
 import logging
 import os
-from argparse import ArgumentParser
 import sys
 import time
+from argparse import ArgumentParser
+
 import schedule
 from web3 import Web3
 
 from data_storage.DataSaver import DataSaver, FailedToSaveDataPointException
 from data_storage.FakeDataSaver import FakeDataSaver
 from data_storage.PostgresDataSaver import PostgresDataSaver
-from price_fetcher.OneInchPriceFetcher import OneInchPriceFetcher
 from price_fetcher.ParaswapPriceFetcher import ParaswapPriceFetcher
-from price_fetcher.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher, UnsupportedTokenException, \
-    UnsupportedChainException, CannotGetPriceException
-from utils import eth_price_to_string, get_premium, chains
+from price_fetcher.SecondaryMarketPriceFetcher import (
+    CannotGetPriceException,
+    SecondaryMarketPriceFetcher,
+    UnsupportedChainException,
+    UnsupportedTokenException,
+)
+from utils import chains, eth_price_to_string, get_premium
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),

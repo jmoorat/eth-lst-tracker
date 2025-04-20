@@ -1,6 +1,5 @@
 from web3 import Web3
 
-
 chains = {
     "ethereum": {
         "chain_id": 1,

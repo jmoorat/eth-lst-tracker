@@ -1,8 +1,8 @@
-from typing import Optional
 from _decimal import Decimal
 from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import Column, DateTime, String, Numeric, Boolean, create_engine
+from sqlalchemy import Boolean, Column, DateTime, Numeric, String, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from data_storage.DataSaver import DataSaver, FailedToSaveDataPointException
