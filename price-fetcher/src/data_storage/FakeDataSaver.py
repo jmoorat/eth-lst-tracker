@@ -7,7 +7,6 @@ from data_storage.DataSaver import DataSaver
 
 
 class FakeDataSaver(DataSaver):
-
     def save_data_point(
         self,
         timestamp: datetime,
@@ -16,7 +15,9 @@ class FakeDataSaver(DataSaver):
         price_usd: Optional[float],
         network: str,
         is_primary_market: bool,
-        premium: float
+        premium: float,
     ):
-        logging.debug(f"Saving data point: {timestamp}, {token_name}, {price_eth}, {price_usd}, {network}, {is_primary_market}, {premium}")
+        logging.debug(
+            f"Saving data point: {timestamp}, {token_name}, {price_eth}, {price_usd}, {network}, {is_primary_market}, {premium}"
+        )
         return

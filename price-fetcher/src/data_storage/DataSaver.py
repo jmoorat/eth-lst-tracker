@@ -9,7 +9,6 @@ class FailedToSaveDataPointException(Exception):
 
 
 class DataSaver(ABC):
-
     @abstractmethod
     def save_data_point(
         self,
@@ -19,7 +18,7 @@ class DataSaver(ABC):
         price_usd: Optional[float],
         network: str,
         is_primary_market: bool,
-        premium: float
+        premium: float,
     ):
         """
         Save data point to database

@@ -32,14 +32,14 @@ class PostgresDataSaver(DataSaver):
         self.session_maker = sessionmaker(bind=self.engine)
 
     def save_data_point(
-            self,
-            timestamp: datetime,
-            token_name: str,
-            price_eth: int | Decimal,
-            price_usd: Optional[float],
-            network: str,
-            is_primary_market: bool,
-            premium: float
+        self,
+        timestamp: datetime,
+        token_name: str,
+        price_eth: int | Decimal,
+        price_usd: Optional[float],
+        network: str,
+        is_primary_market: bool,
+        premium: float,
     ):
         session = self.session_maker()
         try:
@@ -50,7 +50,7 @@ class PostgresDataSaver(DataSaver):
                 price_usd=price_usd,
                 network=network,
                 is_primary_market=is_primary_market,
-                premium=premium
+                premium=premium,
             )
             session.add(lst_price_data_point)
             session.commit()

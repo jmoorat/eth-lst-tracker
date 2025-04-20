@@ -37,16 +37,15 @@ def load_config(config_file_path: str):
 
 
 def main(
-        config: dict,
-        web3_provider: Web3,
-        price_fetcher: SecondaryMarketPriceFetcher,
-        data_saver: DataSaver
+    config: dict,
+    web3_provider: Web3,
+    price_fetcher: SecondaryMarketPriceFetcher,
+    data_saver: DataSaver,
 ):
     primary_market_price = 0
     now = datetime.datetime.now()
 
     for token in config["tokens"]:
-
         # Get primary market price
         if (
             "ethereum" in token["token_addresses"]
@@ -64,7 +63,9 @@ def main(
             try:
                 primary_market_price = get_exchange_rate_function().call()
             except Exception as e:
-                logging.warning(f"Failed to get primary market rate for {token['token_name']} on {chain}: {str(e)}")
+                logging.warning(
+                    f"Failed to get primary market rate for {token['token_name']} on {chain}: {str(e)}"
+                )
                 continue
 
             if primary_market_price >= 0:
@@ -94,8 +95,14 @@ def main(
                     token_address,
                     chains[chain]["eth_token_address"],
                 )
-            except (UnsupportedChainException, UnsupportedTokenException, CannotGetPriceException) as e:
-                logging.warning(f"Failed to get price for {token['token_name']} on {chain}: {str(e)}")
+            except (
+                UnsupportedChainException,
+                UnsupportedTokenException,
+                CannotGetPriceException,
+            ) as e:
+                logging.warning(
+                    f"Failed to get price for {token['token_name']} on {chain}: {str(e)}"
+                )
                 continue
 
             premium = get_premium(primary_market_price, price)
@@ -113,7 +120,7 @@ def main(
                         price_usd=None,
                         network=chain,
                         is_primary_market=False,
-                        premium=premium
+                        premium=premium,
                     )
                 except FailedToSaveDataPointException as e:
                     logging.error(f"Failed to save data point: {str(e)}")
@@ -123,8 +130,22 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("-c", "--config", help="config file path")
     parser.add_argument("-d", "--dry-run", help="dry run", action="store_true")
-    parser.add_argument("-l", "--long-run", help="long run", action="store_true",default=False if os.getenv("LONG_RUN") is None else os.getenv("LONG_RUN") == "true")
-    parser.add_argument("-s", "--schedule", help="Number of minutes to wait between each run", default=5, type=int)
+    parser.add_argument(
+        "-l",
+        "--long-run",
+        help="long run",
+        action="store_true",
+        default=False
+        if os.getenv("LONG_RUN") is None
+        else os.getenv("LONG_RUN") == "true",
+    )
+    parser.add_argument(
+        "-s",
+        "--schedule",
+        help="Number of minutes to wait between each run",
+        default=5,
+        type=int,
+    )
     args = parser.parse_args()
     if not args.config:
         parser.error("A config file is required")
@@ -145,7 +166,9 @@ if __name__ == "__main__":
         except Exception as e:
             logging.error(f"An unexpected error occurred: {str(e)}")
     else:
-        schedule.every(args.schedule).minutes.do(main, loaded_config, w3, secondary_market_price_fetcher, data_saver)
+        schedule.every(args.schedule).minutes.do(
+            main, loaded_config, w3, secondary_market_price_fetcher, data_saver
+        )
         logging.info(f"Started. Price fetching will run every {args.schedule} minutes.")
         while True:
             try:

@@ -3,32 +3,32 @@ from web3 import Web3
 chains = {
     "ethereum": {
         "chain_id": 1,
-        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     },
     "arbitrum": {
         "chain_id": 42161,
-        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     },
     "optimism": {
         "chain_id": 10,
-        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     },
     "polygon": {
         "chain_id": 137,
-        "eth_token_address": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"
+        "eth_token_address": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
     },
     "gnosis": {
         "chain_id": 100,
-        "eth_token_address": "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1"
+        "eth_token_address": "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1",
     },
     "base": {
         "chain_id": 8453,
-        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     },
     "zksync": {
         "chain_id": 324,
-        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-    }
+        "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    },
 }
 
 
