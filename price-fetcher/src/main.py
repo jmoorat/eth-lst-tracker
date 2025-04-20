@@ -12,6 +12,7 @@ from data_storage.DataSaver import DataSaver, FailedToSaveDataPointException
 from data_storage.FakeDataSaver import FakeDataSaver
 from data_storage.PostgresDataSaver import PostgresDataSaver
 from price_fetcher.OneInchPriceFetcher import OneInchPriceFetcher
+from price_fetcher.ParaswapPriceFetcher import ParaswapPriceFetcher
 from price_fetcher.SecondaryMarketPriceFetcher import SecondaryMarketPriceFetcher, UnsupportedTokenException, \
     UnsupportedChainException, CannotGetPriceException
 from utils import eth_price_to_string, get_premium, chains
@@ -126,8 +127,8 @@ if __name__ == "__main__":
 
     loaded_config = load_config(args.config)
     w3 = Web3(Web3.HTTPProvider(os.environ.get("WEB3_PROVIDER")))
-    secondary_market_price_fetcher: SecondaryMarketPriceFetcher = OneInchPriceFetcher(
-        os.getenv("ONE_INCH_API_KEY"), os.getenv("HTTP_PROXY")
+    secondary_market_price_fetcher: SecondaryMarketPriceFetcher = ParaswapPriceFetcher(
+        os.getenv("HTTP_PROXY")
     )
     if args.dry_run:
         data_saver: DataSaver = FakeDataSaver()
