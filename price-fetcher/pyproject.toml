@@ -1,0 +1,17 @@
+[project]
+name = "price-fetcher"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "psycopg2-binary>=2.9.10",
+    "requests>=2.32.3",
+    "schedule>=1.2.2",
+    "sqlalchemy>=2.0.40",
+    "web3>=7.10.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.6",
+]
