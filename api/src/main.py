@@ -5,9 +5,9 @@ from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from . import crud, models
-from .crud import QueryableTimeBucket
-from .database import SessionLocal, engine
+import crud, models
+from crud import QueryableTimeBucket
+from database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI(
