@@ -1,0 +1,39 @@
+services:
+  price-fetcher:
+    build:
+      context: ./price-fetcher
+      dockerfile: Dockerfile
+    depends_on:
+      - timescaledb
+    environment:
+      - DATABASE_URL=postgresql://user:password@timescaledb:5432/lsttracker
+      - LOG_LEVEL=INFO
+      - WEB3_PROVIDER=
+      - HTTP_PROXY=
+      - ONE_INCH_API_KEY=
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    depends_on:
+      - timescaledb
+    environment:
+      - DATABASE_URL=postgresql://user:password@timescaledb:5432/lsttracker
+    ports:
+      - "8000:80"
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: timescaledb
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lsttracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+
+volumes:
+  timescale_data:
