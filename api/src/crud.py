@@ -12,12 +12,13 @@ class QueryableTimeBucket(str, Enum):
     ONE_WEEK = "1 week"
     ONE_MONTH = "1 month"
 
+
 interval_limits_per_time_buckets = {
     QueryableTimeBucket.FIVE_MINUTES: "1 day",
     QueryableTimeBucket.ONE_HOUR: "1 week",
     QueryableTimeBucket.ONE_DAY: "6 months",
     QueryableTimeBucket.ONE_WEEK: "1 year",
-    QueryableTimeBucket.ONE_MONTH: "5 years"
+    QueryableTimeBucket.ONE_MONTH: "5 years",
 }
 
 
@@ -37,7 +38,7 @@ def get_last_prices(db: Session):
     """)
     result = db.execute(sql)
     print(list(result.keys()))
-    Record = namedtuple('Record', list(result.keys()))
+    Record = namedtuple("Record", list(result.keys()))
     records = [Record(*r)._asdict() for r in result.fetchall()]
     print(records)
     return records
@@ -54,15 +55,28 @@ def get_last_price(db: Session, token_name: str, network: str, is_primary_market
         GROUP BY token_name, network, is_primary_market
         ORDER BY token_name, is_primary_market DESC, network
     """)
-    result = db.execute(sql, {'token_name': token_name, 'network': network, 'is_primary_market': is_primary_market})
-    Record = namedtuple('Record', result.keys())
+    result = db.execute(
+        sql,
+        {
+            "token_name": token_name,
+            "network": network,
+            "is_primary_market": is_primary_market,
+        },
+    )
+    Record = namedtuple("Record", result.keys())
     records = [Record(*r)._asdict() for r in result.fetchall()]
     if len(records) == 0:
         return None
     return records[0]
 
 
-def get_price_history(db: Session, token_name: str, network: str, is_primary_market: bool, time_bucket: QueryableTimeBucket):
+def get_price_history(
+    db: Session,
+    token_name: str,
+    network: str,
+    is_primary_market: bool,
+    time_bucket: QueryableTimeBucket,
+):
     sql = text("""
         SELECT
             time_bucket(:time_bucket, timestamp) as time_bucket,
@@ -74,14 +88,16 @@ def get_price_history(db: Session, token_name: str, network: str, is_primary_mar
         GROUP BY time_bucket, token_name, network, is_primary_market
         ORDER BY time_bucket DESC;
     """)
-    result = db.execute(sql, {
-        'token_name': token_name,
-        'network': network,
-        'is_primary_market': is_primary_market,
-        'time_bucket': time_bucket,
-        'time_window': interval_limits_per_time_buckets[time_bucket]
-    })
-    Record = namedtuple('Record', result.keys())
+    result = db.execute(
+        sql,
+        {
+            "token_name": token_name,
+            "network": network,
+            "is_primary_market": is_primary_market,
+            "time_bucket": time_bucket,
+            "time_window": interval_limits_per_time_buckets[time_bucket],
+        },
+    )
+    Record = namedtuple("Record", result.keys())
     records = [Record(*r)._asdict() for r in result.fetchall()]
     return records
-

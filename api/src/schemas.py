@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class LstPrice(BaseModel):
     timestamp: str
     token_name: str
