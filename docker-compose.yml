@@ -5,12 +5,13 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - timescaledb
+    restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://user:password@timescaledb:5432/lsttracker
       - LOG_LEVEL=INFO
       - WEB3_PROVIDER=
-      - HTTP_PROXY=
-      - ONE_INCH_API_KEY=
+      - LONG_RUN=true
+
 
   api:
     build:
@@ -18,6 +19,7 @@ services:
       dockerfile: Dockerfile
     depends_on:
       - timescaledb
+    restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://user:password@timescaledb:5432/lsttracker
     ports:
@@ -26,6 +28,7 @@ services:
   timescaledb:
     image: timescale/timescaledb:latest-pg16
     container_name: timescaledb
+    restart: unless-stopped
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
