@@ -23,6 +23,8 @@ class ParaswapPriceFetcher(SecondaryMarketPriceFetcher):
             43114,  # avalanche
             56,  # bsc
             250,  # fantom
+            8453,  # base
+            100,  # gnosis
         ]
 
     def get_price(
