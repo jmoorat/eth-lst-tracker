@@ -12,6 +12,7 @@ from web3 import Web3
 from data_storage.DataSaver import DataSaver, FailedToSaveDataPointException
 from data_storage.FakeDataSaver import FakeDataSaver
 from data_storage.PostgresDataSaver import PostgresDataSaver
+from price_fetcher.OneInchPriceFetcher import OneInchPriceFetcher
 from price_fetcher.ParaswapPriceFetcher import ParaswapPriceFetcher
 from price_fetcher.SecondaryMarketPriceFetcher import (
     CannotGetPriceException,
@@ -19,7 +20,7 @@ from price_fetcher.SecondaryMarketPriceFetcher import (
     UnsupportedChainException,
     UnsupportedTokenException,
 )
-from utils import chains, eth_price_to_string, get_premium
+from utils import chains, eth_price_to_string, get_premium, SecondaryMarket
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -34,6 +35,17 @@ def load_config(config_file_path: str):
     """
     with open(config_file_path) as f:
         return json.load(f)
+
+
+def get_env_or_default(env_key: str, default_value: any) -> any:
+    env_value = os.getenv(env_key)
+    if env_value is None or env_value == "":
+        return default_value
+
+    if isinstance(default_value, bool):
+        return env_value.lower() in ("true", "1", "t", "y", "yes", "on")
+
+    return type(default_value)(env_value)
 
 
 def main(
@@ -128,44 +140,67 @@ def main(
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("-c", "--config", help="config file path")
-    parser.add_argument("-d", "--dry-run", help="dry run", action="store_true")
+    parser.add_argument("-c", "--config", help="config file path", required=True)
+    parser.add_argument(
+        "-d",
+        "--dry-run",
+        help="dry run (fetched data won't be saved)",
+        action="store_true",
+    )
     parser.add_argument(
         "-l",
         "--long-run",
-        help="long run",
+        help="long run (data will be fetched at regular intervals)",
         action="store_true",
-        default=False
-        if os.getenv("LONG_RUN") is None
-        else os.getenv("LONG_RUN") == "true",
     )
     parser.add_argument(
         "-s",
         "--schedule",
-        help="Number of minutes to wait between each run",
-        default=5,
+        help="Number of minutes to wait between each run (when using long-run mode)",
         type=int,
+        default=get_env_or_default("SCHEDULE", 5),
+    )
+    parser.add_argument(
+        "-m",
+        "--secondary-market",
+        help="Secondary market to use",
+        type=SecondaryMarket,
+        choices=list(SecondaryMarket),
+        default=get_env_or_default("SECONDARY_MARKET", SecondaryMarket.PARASWAP),
+    )
+    parser.add_argument(
+        "-w",
+        "--web3-provider",
+        help="Web3 provider URL",
+        type=str,
+        default=get_env_or_default("WEB3_PROVIDER", ""),
     )
     args = parser.parse_args()
-    if not args.config:
-        parser.error("A config file is required")
 
+    # Load config
     loaded_config = load_config(args.config)
-    w3 = Web3(Web3.HTTPProvider(os.environ.get("WEB3_PROVIDER")))
-    secondary_market_price_fetcher: SecondaryMarketPriceFetcher = ParaswapPriceFetcher(
-        os.getenv("HTTP_PROXY")
-    )
-    if args.dry_run:
+
+    # Setup web3 provider
+    w3 = Web3(Web3.HTTPProvider(args.web3_provider))
+
+    # Setup secondary market price fetcher
+    if args.secondary_market == SecondaryMarket.PARASWAP:
+        secondary_market_price_fetcher: SecondaryMarketPriceFetcher = (
+            ParaswapPriceFetcher(os.getenv("HTTP_PROXY"))
+        )
+    else:
+        secondary_market_price_fetcher: SecondaryMarketPriceFetcher = (
+            OneInchPriceFetcher(os.getenv("ONE_INCH_API_KEY"), os.getenv("HTTP_PROXY"))
+        )
+
+    # Setup data saver
+    if args.dry_run or os.getenv("DRY_RUN") == "true":
         data_saver: DataSaver = FakeDataSaver()
     else:
         data_saver: DataSaver = PostgresDataSaver(os.getenv("DATABASE_URL"))
 
-    if not args.long_run:
-        try:
-            main(loaded_config, w3, secondary_market_price_fetcher, data_saver)
-        except Exception as e:
-            logging.error(f"An unexpected error occurred: {str(e)}")
-    else:
+    # Launch
+    if args.long_run or os.getenv("LONG_RUN") == "true":
         schedule.every(args.schedule).minutes.do(
             main, loaded_config, w3, secondary_market_price_fetcher, data_saver
         )
@@ -176,3 +211,8 @@ if __name__ == "__main__":
             except Exception as e:
                 logging.error(f"An unexpected error occurred: {str(e)}")
             time.sleep(1)
+    else:
+        try:
+            main(loaded_config, w3, secondary_market_price_fetcher, data_saver)
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {str(e)}")

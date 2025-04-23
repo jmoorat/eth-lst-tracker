@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 from web3 import Web3
 
 chains = {
@@ -30,6 +32,15 @@ chains = {
         "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     },
 }
+
+
+class SecondaryMarket(StrEnum):
+    """
+    Enum for compatible secondary markets
+    """
+
+    ONE_INCH = "1inch"
+    PARASWAP = "paraswap"
 
 
 def eth_price_to_string(eth_amount: int) -> str:
