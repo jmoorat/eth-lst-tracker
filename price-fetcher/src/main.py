@@ -5,6 +5,7 @@ import os
 import sys
 import time
 from argparse import ArgumentParser
+from typing import Optional
 
 import schedule
 from web3 import Web3
@@ -37,15 +38,17 @@ def load_config(config_file_path: str):
         return json.load(f)
 
 
-def get_env_or_default(env_key: str, default_value: any) -> any:
+def get_env_or_default_or_required(
+    env_key: str, default_value: Optional[str] = None
+) -> dict:
     env_value = os.getenv(env_key)
-    if env_value is None or env_value == "":
-        return default_value
 
-    if isinstance(default_value, bool):
-        return env_value.lower() in ("true", "1", "t", "y", "yes", "on")
+    if env_value is not None and env_value != "":
+        return {"default": env_value}
+    if default_value is not None:
+        return {"default": default_value}
 
-    return type(default_value)(env_value)
+    return {"required": True}
 
 
 def main(
@@ -158,7 +161,7 @@ if __name__ == "__main__":
         "--schedule",
         help="Number of minutes to wait between each run (when using long-run mode)",
         type=int,
-        default=get_env_or_default("SCHEDULE", 5),
+        **get_env_or_default_or_required("SCHEDULE", "5"),
     )
     parser.add_argument(
         "-m",
@@ -166,14 +169,14 @@ if __name__ == "__main__":
         help="Secondary market to use",
         type=SecondaryMarket,
         choices=list(SecondaryMarket),
-        default=get_env_or_default("SECONDARY_MARKET", SecondaryMarket.PARASWAP),
+        **get_env_or_default_or_required("SECONDARY_MARKET", SecondaryMarket.PARASWAP),
     )
     parser.add_argument(
         "-w",
         "--web3-provider",
         help="Web3 provider URL",
         type=str,
-        default=get_env_or_default("WEB3_PROVIDER", ""),
+        **get_env_or_default_or_required("WEB3_PROVIDER"),
     )
     args = parser.parse_args()
 
