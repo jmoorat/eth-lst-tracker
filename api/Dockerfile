@@ -11,4 +11,4 @@ RUN uv sync --frozen
 
 COPY ./src ./src
 
-CMD ["uv", "run", "fastapi", "run", "src/main.py", "--port", "80"]
+CMD ["uv", "run", "fastapi", "run", "src/main.py", "--port", "3000"]
