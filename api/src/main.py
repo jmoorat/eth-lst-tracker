@@ -58,6 +58,11 @@ class FullPriceResponse(BaseModel):
     premium_percentage: float
 
 
+class TokenNetworksResponse(BaseModel):
+    token_name: str
+    networks: list[str]
+
+
 # Dependency
 def get_db():
     db = SessionLocal()
@@ -132,3 +137,9 @@ def get_last_price(
         is_primary_market=primary_market,
         **last_price,
     )
+
+
+@app.get("/tokens")
+def get_available_tokens(db: Session = Depends(get_db)) -> list[TokenNetworksResponse]:
+    result = crud.get_available_tokens_and_networks(db)
+    return [TokenNetworksResponse(**r) for r in result]

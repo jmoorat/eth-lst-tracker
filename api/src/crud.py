@@ -101,3 +101,15 @@ def get_price_history(
     Record = namedtuple("Record", result.keys())
     records = [Record(*r)._asdict() for r in result.fetchall()]
     return records
+
+
+def get_available_tokens_and_networks(db: Session):
+    sql = text("""
+        SELECT DISTINCT token_name, array_agg(DISTINCT network) as networks
+        FROM prices
+        GROUP BY token_name
+        ORDER BY token_name
+    """)
+    result = db.execute(sql)
+    Record = namedtuple("Record", list(result.keys()))
+    return [Record(*r)._asdict() for r in result.fetchall()]
