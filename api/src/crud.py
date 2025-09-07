@@ -86,14 +86,14 @@ def get_price_history(
                min(price_eth) as min_price_eth,
                max(price_eth) as max_price_eth,
                avg(price_eth) as avg_price_eth,
-               first (price_eth, timestamp) as first_price_eth,
-               last (price_eth, timestamp) as last_price_eth,
+               first(price_eth, timestamp) as first_price_eth,
+               last(price_eth, timestamp) as last_price_eth,
                
-               round(min (premium)*100, 3) as min_premium_percentage,
-               round(max (premium)*100, 3) as max_premium_percentage,
-               round(avg (premium)*100, 3) as avg_premium_percentage,
-               round(first (premium, timestamp)*100, 3) as first_premium_percentage,
-               round(last (premium, timestamp)*100, 3) as last_premium_percentage
+               round(min(premium)*100, 3) as min_premium_percentage,
+               round(max(premium)*100, 3) as max_premium_percentage,
+               round(avg(premium)*100, 3) as avg_premium_percentage,
+               round(first(premium, timestamp)*100, 3) as first_premium_percentage,
+               round(last(premium, timestamp)*100, 3) as last_premium_percentage
 
            FROM prices
            WHERE timestamp
