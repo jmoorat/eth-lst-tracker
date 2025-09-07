@@ -49,6 +49,27 @@ class PriceResponse(BaseModel):
     prices: list[PriceHistoryResponse]
 
 
+class PriceHistoryStats(BaseModel):
+    first: float
+    min: float
+    avg: float
+    max: float
+    last: float
+
+
+class AdvancedPriceHistoryResponse(BaseModel):
+    timestamp: datetime
+    price_eth: PriceHistoryStats
+    premium_percentage: PriceHistoryStats
+
+
+class AdvancedPriceResponse(BaseModel):
+    token_name: str
+    network: str
+    is_primary_market: bool
+    prices: list[AdvancedPriceHistoryResponse]
+
+
 class FullPriceResponse(BaseModel):
     timestamp: datetime
     token_name: str
@@ -90,13 +111,16 @@ def get_price_history(
         raise HTTPException(
             status_code=400, detail="Primary market is only available on Ethereum"
         )
+
     result = crud.get_price_history(
         db,
         token_name,
         network,
         primary_market,
+        False,
         resolution_request_to_time_bucket[resolution],
     )
+
     response: PriceResponse = PriceResponse(
         token_name=token_name,
         network=network,
@@ -106,6 +130,57 @@ def get_price_history(
                 timestamp=r["time_bucket"],
                 price_eth=r["price_eth"],
                 premium_percentage=r["premium_percentage"],
+            )
+            for r in result
+        ],
+    )
+
+    return response
+
+
+@app.get("/prices/{token_name}/history/advanced")
+def get_advanced_price_history(
+    token_name: str,
+    network: str = "ethereum",
+    primary_market: bool = False,
+    resolution: PriceHistoryResolutionRequest = PriceHistoryResolutionRequest.ONE_DAY,
+    db: Session = Depends(get_db),
+) -> AdvancedPriceResponse:
+    if primary_market and network != "ethereum":
+        raise HTTPException(
+            status_code=400, detail="Primary market is only available on Ethereum"
+        )
+
+    result = crud.get_price_history(
+        db,
+        token_name,
+        network,
+        primary_market,
+        True,
+        resolution_request_to_time_bucket[resolution],
+    )
+
+    response: AdvancedPriceResponse = AdvancedPriceResponse(
+        token_name=token_name,
+        network=network,
+        is_primary_market=primary_market,
+        prices=[
+            AdvancedPriceHistoryResponse(
+                timestamp=r["time_bucket"],
+                price_eth=PriceHistoryStats(
+                    min=r["min_price_eth"],
+                    max=r["max_price_eth"],
+                    avg=r["avg_price_eth"],
+                    first=r["first_price_eth"],
+                    last=r["last_price_eth"],
+                ),
+                premium_percentage=PriceHistoryStats(
+                    min=r["min_premium_percentage"],
+                    max=r["max_premium_percentage"],
+                    avg=r["avg_premium_percentage"],
+                    first=r["first_premium_percentage"],
+                    last=r["last_premium_percentage"],
+                ),
             )
             for r in result
         ],
