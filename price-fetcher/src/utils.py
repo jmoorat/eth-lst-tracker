@@ -31,6 +31,10 @@ chains = {
         "chain_id": 324,
         "eth_token_address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     },
+    "bsc": {
+        "chain_id": 56,
+        "eth_token_address": "0x2170ed0880ac9a755fd29b2688956bd959f933f8",
+    },
 }
 
 
