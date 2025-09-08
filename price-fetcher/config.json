@@ -36,6 +36,15 @@
             "get_exchange_rate_function_name": "exchangeRate"
         },
         {
+            "token_name": "wBETH",
+            "token_addresses": {
+                "ethereum": "0xa2E3356610840701BDf5611a53974510Ae27E2e1",
+                "bsc": "0xa2E3356610840701BDf5611a53974510Ae27E2e1"
+            },
+            "native_contract_abi": [{"name": "exchangeRate", "outputs": [{"type": "uint256", "name": ""}], "inputs": [], "stateMutability": "view", "type": "function"}],
+            "get_exchange_rate_function_name": "exchangeRate"
+        },
+        {
             "token_name": "sfrxETH",
             "token_addresses": {
                 "ethereum": "0xac3E018457B222d93114458476f3E3416Abbe38F",
