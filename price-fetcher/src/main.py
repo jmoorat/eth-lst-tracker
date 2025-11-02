@@ -5,6 +5,7 @@ import os
 import sys
 import time
 from argparse import ArgumentParser
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 import schedule
@@ -204,16 +205,37 @@ if __name__ == "__main__":
 
     # Launch
     if args.long_run or os.getenv("LONG_RUN") == "true":
-        schedule.every(args.schedule).minutes.do(
-            main, loaded_config, w3, secondary_market_price_fetcher, data_saver
-        )
-        logging.info(f"Started. Price fetching will run every {args.schedule} minutes.")
-        while True:
+        executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="price-fetcher")
+
+        def run_main_job():
             try:
-                schedule.run_pending()
+                main(loaded_config, w3, secondary_market_price_fetcher, data_saver)
             except Exception as e:
-                logging.error(f"An unexpected error occurred: {str(e)}")
-            time.sleep(1)
+                logging.error(f"An unexpected error occurred while running the job: {str(e)}")
+
+        def schedule_run():
+            executor.submit(run_main_job)
+
+        schedule.every(args.schedule).minutes.do(schedule_run)
+        logging.info(f"Started. Price fetching will run every {args.schedule} minutes.")
+
+        try:
+            while True:
+                try:
+                    schedule.run_pending()
+                except Exception as e:
+                    logging.error(f"An unexpected error occurred while scheduling: {str(e)}")
+
+                idle_seconds = schedule.idle_seconds()
+                if idle_seconds is None:
+                    idle_seconds = 1
+                else:
+                    idle_seconds = max(0, idle_seconds)
+                time.sleep(idle_seconds)
+        except KeyboardInterrupt:
+            logging.info("Stopping scheduler after receiving keyboard interrupt.")
+        finally:
+            executor.shutdown(wait=True)
     else:
         try:
             main(loaded_config, w3, secondary_market_price_fetcher, data_saver)
