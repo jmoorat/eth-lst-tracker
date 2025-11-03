@@ -1,3 +1,4 @@
+import random
 import time
 
 import requests
@@ -35,7 +36,7 @@ class ParaswapPriceFetcher(SecondaryMarketPriceFetcher):
                 f"Chain id {chain_id} is not supported by Paraswap"
             )
 
-        time.sleep(1)  # rate limit
+        time.sleep(random.uniform(1, 3))  # rate limit
         quote_params = {
             "srcToken": token_address,
             "destToken": eth_token_address,
