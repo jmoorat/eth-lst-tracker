@@ -216,7 +216,7 @@ if __name__ == "__main__":
         def schedule_run():
             executor.submit(run_main_job)
 
-        schedule.every(args.schedule).minutes.do(schedule_run)
+        schedule.every(args.schedule).minutes.at(":00").do(schedule_run)
         logging.info(f"Started. Price fetching will run every {args.schedule} minutes.")
 
         try:
