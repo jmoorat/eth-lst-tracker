@@ -118,3 +118,30 @@ def get_price_history(
 
 def get_available_tokens_and_networks(db: Session):
     return db.query(models.TokenListing).all()
+
+def check_available_token_network_market_type(
+    db: Session, token_name: str, network: str, is_primary_market: bool
+) -> bool:
+    result = (
+        db.query(models.TokenListing)
+        .filter(
+            models.TokenListing.token_name == token_name,
+            models.TokenListing.network == network,
+            models.TokenListing.is_primary_market == is_primary_market,
+        )
+        .first()
+    )
+    return result is not None
+
+def create_alert(db: Session, alert: schemas.AlertCreate):
+    """Create an Alert row from a Pydantic AlertCreate.
+
+    Excludes client-side-only fields (like `cooldown_seconds`) before creating the SQLAlchemy model.
+    Returns a dict compatible with schemas.AlertRead (created/updated timestamps included).
+    """
+    data = alert.model_dump()
+    alert_model = models.Alert(**data)
+    db.add(alert_model)
+    db.commit()
+    db.refresh(alert_model)
+    return schemas.Alert.model_validate(alert_model, from_attributes=True)

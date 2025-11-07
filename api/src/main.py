@@ -166,3 +166,31 @@ def get_last_price(
 def get_available_tokens(db: Session = Depends(get_db)) -> list[TokenNetworkResponse]:
     result = crud.get_available_tokens_and_networks(db)
     return result
+
+
+@app.post(
+    "/alerts",
+    response_model=schemas.Alert,
+    status_code=201,
+)
+def create_alert(alert: schemas.AlertCreate, db: Session = Depends(get_db)) -> schemas.Alert:
+    """Create a new alert.
+
+    Validates the primary market constraint (only available on Ethereum) and delegates
+    creation to crud.create_alert. Returns the created alert as AlertRead.
+    """
+    if alert.is_primary_market and alert.network != "ethereum":
+        raise HTTPException(
+            status_code=400, detail="Primary market is only available on Ethereum"
+        )
+
+    if not crud.check_available_token_network_market_type(
+        db, alert.token_name, alert.network, alert.is_primary_market
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="The specified token, network, and market type combination is not available.",
+    )
+
+    alert_created: schemas.Alert = crud.create_alert(db, alert)
+    return alert_created
