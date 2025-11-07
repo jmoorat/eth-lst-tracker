@@ -7,7 +7,18 @@ from sqlalchemy.orm import Session
 
 import crud
 import models
-from crud import QueryableTimeBucket
+import schemas
+from schemas import (
+    AdvancedPriceHistoryResponse,
+    AdvancedPriceResponse,
+    FullPriceResponse,
+    PriceHistoryResolutionRequest,
+    PriceHistoryResponse,
+    PriceResponse,
+    PriceHistoryStats,
+    TokenNetworkResponse,
+    resolution_request_to_time_bucket
+)
 from database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
@@ -19,69 +30,6 @@ app = FastAPI(
 )
 
 
-class PriceHistoryResolutionRequest(str, Enum):
-    FIVE_MINUTES = "5min"
-    ONE_HOUR = "1h"
-    ONE_DAY = "1d"
-    ONE_WEEK = "1w"
-    ONE_MONTH = "1m"
-
-
-resolution_request_to_time_bucket = {
-    PriceHistoryResolutionRequest.FIVE_MINUTES: QueryableTimeBucket.FIVE_MINUTES,
-    PriceHistoryResolutionRequest.ONE_HOUR: QueryableTimeBucket.ONE_HOUR,
-    PriceHistoryResolutionRequest.ONE_DAY: QueryableTimeBucket.ONE_DAY,
-    PriceHistoryResolutionRequest.ONE_WEEK: QueryableTimeBucket.ONE_WEEK,
-    PriceHistoryResolutionRequest.ONE_MONTH: QueryableTimeBucket.ONE_MONTH,
-}
-
-
-class PriceHistoryResponse(BaseModel):
-    timestamp: datetime
-    price_eth: float
-    premium_percentage: float
-
-
-class PriceResponse(BaseModel):
-    token_name: str
-    network: str
-    is_primary_market: bool
-    prices: list[PriceHistoryResponse]
-
-
-class PriceHistoryStats(BaseModel):
-    first: float
-    min: float
-    avg: float
-    max: float
-    last: float
-
-
-class AdvancedPriceHistoryResponse(BaseModel):
-    timestamp: datetime
-    price_eth: PriceHistoryStats
-    premium_percentage: PriceHistoryStats
-
-
-class AdvancedPriceResponse(BaseModel):
-    token_name: str
-    network: str
-    is_primary_market: bool
-    prices: list[AdvancedPriceHistoryResponse]
-
-
-class FullPriceResponse(BaseModel):
-    timestamp: datetime
-    token_name: str
-    network: str
-    is_primary_market: bool
-    price_eth: float
-    premium_percentage: float
-
-
-class TokenNetworksResponse(BaseModel):
-    token_name: str
-    networks: list[str]
 
 
 # Dependency
@@ -215,6 +163,6 @@ def get_last_price(
 
 
 @app.get("/tokens")
-def get_available_tokens(db: Session = Depends(get_db)) -> list[TokenNetworksResponse]:
+def get_available_tokens(db: Session = Depends(get_db)) -> list[TokenNetworkResponse]:
     result = crud.get_available_tokens_and_networks(db)
-    return [TokenNetworksResponse(**r) for r in result]
+    return result

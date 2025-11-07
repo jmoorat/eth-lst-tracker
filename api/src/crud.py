@@ -4,23 +4,8 @@ from enum import Enum
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
 
-
-class QueryableTimeBucket(str, Enum):
-    FIVE_MINUTES = "5 minutes"
-    ONE_HOUR = "1 hour"
-    ONE_DAY = "1 day"
-    ONE_WEEK = "1 week"
-    ONE_MONTH = "1 month"
-
-
-interval_limits_per_time_buckets = {
-    QueryableTimeBucket.FIVE_MINUTES: "1 day",
-    QueryableTimeBucket.ONE_HOUR: "1 week",
-    QueryableTimeBucket.ONE_DAY: "6 months",
-    QueryableTimeBucket.ONE_WEEK: "1 year",
-    QueryableTimeBucket.ONE_MONTH: "5 years",
-}
-
+import models
+import schemas
 
 def get_last_prices(db: Session):
     # db query custom SQL
@@ -76,7 +61,7 @@ def get_price_history(
     network: str,
     is_primary_market: bool,
     advanced: bool,
-    time_bucket: QueryableTimeBucket,
+    time_bucket: schemas.QueryableTimeBucket,
 ):
     if advanced:
         sql = text("""
@@ -123,7 +108,7 @@ def get_price_history(
             "network": network,
             "is_primary_market": is_primary_market,
             "time_bucket": time_bucket,
-            "time_window": interval_limits_per_time_buckets[time_bucket],
+            "time_window": schemas.interval_limits_per_time_buckets[time_bucket],
         },
     )
     Record = namedtuple("Record", result.keys())
@@ -132,12 +117,4 @@ def get_price_history(
 
 
 def get_available_tokens_and_networks(db: Session):
-    sql = text("""
-        SELECT DISTINCT token_name, array_agg(DISTINCT network) as networks
-        FROM prices
-        GROUP BY token_name
-        ORDER BY token_name
-    """)
-    result = db.execute(sql)
-    Record = namedtuple("Record", list(result.keys()))
-    return [Record(*r)._asdict() for r in result.fetchall()]
+    return db.query(models.TokenListing).all()
