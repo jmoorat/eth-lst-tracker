@@ -1,10 +1,12 @@
-from datetime import datetime
-from enum import Enum
+import logging
+import threading
+from contextlib import suppress, asynccontextmanager
+from time import monotonic
 
 from fastapi import Depends, FastAPI, HTTPException
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import alerting
 import crud
 import models
 import schemas
@@ -22,14 +24,64 @@ from schemas import (
 from database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+ALERT_CHECK_INTERVAL_SECONDS = 600
+
+
+def _alert_check_worker(stop_event: threading.Event) -> None:
+    logger.info(f"Alert check worker started")
+    next_run = monotonic()
+    while not stop_event.is_set():
+        try:
+            db = SessionLocal()
+            try:
+                alerting.run_alert_checks(db)
+            finally:
+                db.close()
+        except Exception:  # pragma: no cover - defensive logging
+            logger.exception("Failed to execute alert checks")
+
+        next_run += ALERT_CHECK_INTERVAL_SECONDS
+        delay = max(0, next_run - monotonic())
+        if stop_event.wait(delay):
+            break
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    stop_event = threading.Event()
+    thread = threading.Thread(
+        target=_alert_check_worker,
+        args=(stop_event,),
+        name="alert-check-worker",
+        daemon=True,
+    )
+    thread.start()
+    app.state.alert_check_stop_event = stop_event
+    app.state.alert_check_thread = thread
+
+    yield
+
+    stop_event = getattr(app.state, "alert_check_stop_event", None)
+    thread = getattr(app.state, "alert_check_thread", None)
+    if stop_event is not None:
+        stop_event.set()
+    if thread is not None:
+        with suppress(RuntimeError):
+            thread.join()
+
+
 app = FastAPI(
     title="ETH LST tracker API",
     summary="API to track prices and premiums of various Ethereum Liquid Staking Tokens (LST).",
     docs_url=None,
     redoc_url="/docs",
+    lifespan=lifespan,
 )
-
-
 
 
 # Dependency

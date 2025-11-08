@@ -8,7 +8,6 @@ import models
 import schemas
 
 def get_last_prices(db: Session):
-    # db query custom SQL
     sql = text("""
         SELECT 
             last(timestamp, timestamp) as timestamp,
@@ -22,10 +21,8 @@ def get_last_prices(db: Session):
         ORDER BY token_name, is_primary_market DESC, network
     """)
     result = db.execute(sql)
-    print(list(result.keys()))
     Record = namedtuple("Record", list(result.keys()))
     records = [Record(*r)._asdict() for r in result.fetchall()]
-    print(records)
     return records
 
 
@@ -145,3 +142,17 @@ def create_alert(db: Session, alert: schemas.AlertCreate):
     db.commit()
     db.refresh(alert_model)
     return schemas.Alert.model_validate(alert_model, from_attributes=True)
+
+def get_alerts_to_evaluate(db: Session):
+    """Get all active alerts that need to be evaluated."""
+    return (
+        db.query(models.Alert)
+        .filter(models.Alert.status == schemas.AlertStatus.ACTIVE)
+        .all()
+    )
+
+def save_alert(db: Session, alert: models.Alert):
+    """Save changes to an existing alert."""
+    db.commit()
+    db.refresh(alert)
+    return alert

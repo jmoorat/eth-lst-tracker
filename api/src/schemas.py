@@ -118,14 +118,14 @@ class AlertComparison(StrEnum):
     eq = "eq"
 
 class AlertType(StrEnum):
-    one_off = "one_off"
-    recurrent = "recurrent"
+    ONE_OFF = "one_off"
+    RECURRENT = "recurrent"
 
 class AlertStatus(StrEnum):
-    active = "active"
-    triggered = "triggered"
-    paused = "paused"
-    cancelled = "cancelled"
+    ACTIVE = "active"
+    TRIGGERED = "triggered"
+    PAUSED = "paused"
+    CANCELLED = "cancelled"
 
 class AlertCreate(BaseModel):
     email: EmailStr
@@ -148,7 +148,7 @@ class Alert(BaseModel):
     comparison: AlertComparison
     target_value: float
     type: AlertType
-    status: AlertStatus = AlertStatus.active
+    status: AlertStatus = AlertStatus.ACTIVE
     trigger_count: int = 0
     expires_at: Optional[datetime] = None
     created_at: datetime
