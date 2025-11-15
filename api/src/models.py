@@ -1,4 +1,14 @@
-from sqlalchemy import Boolean, Column, DateTime, Numeric, String, Enum, Integer, func, ForeignKey, ForeignKeyConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKeyConstraint,
+    Integer,
+    Numeric,
+    String,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import text
 
@@ -19,6 +29,7 @@ class LstPrice(Base):
     price_eth = Column(Numeric(20, 18))
     price_usd = Column(Numeric(16, 2))
     premium = Column(Numeric(6, 5))
+
 
 class TokenListing(Base):
     """
@@ -48,7 +59,9 @@ class Alert(Base):
     token_name = Column(String(10), nullable=False)
     network = Column(String(20), nullable=False)
     is_primary_market = Column(Boolean, nullable=False)
-    metric = Column(Enum("price_eth", "premium", name="alert_metric"), nullable=False)  # 'price_eth' or 'premium_percentage'
+    metric = Column(
+        Enum("price_eth", "premium", name="alert_metric"), nullable=False
+    )  # 'price_eth' or 'premium_percentage'
     threshold = Column(Numeric(20, 10), nullable=False)
     condition = Column(
         Enum("lt", "lte", "gt", "gte", "eq", name="alert_condition"), nullable=False
@@ -61,15 +74,26 @@ class Alert(Base):
     type = Column(Enum("one_off", "recurrent", name="alert_type"), nullable=False)
     note = Column(String(500))
     trigger_count = Column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
+    created_at = Column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
     last_triggered_at = Column(DateTime(timezone=True))
     expires_at = Column(DateTime(timezone=True))
 
     __table_args__ = (
         ForeignKeyConstraint(
             ["token_name", "network", "is_primary_market"],
-            ["token_listings.token_name", "token_listings.network", "token_listings.is_primary_market"],
+            [
+                "token_listings.token_name",
+                "token_listings.network",
+                "token_listings.is_primary_market",
+            ],
             ondelete="CASCADE",
         ),
     )

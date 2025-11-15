@@ -1,27 +1,27 @@
 import logging
 import os
 import threading
-from contextlib import suppress, asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from time import monotonic
-
-from fastapi import Depends, FastAPI, HTTPException
-from sqlalchemy.orm import Session
 
 import alerting
 import crud
 import models
 import schemas
+from fastapi import Depends, FastAPI, HTTPException
 from schemas import (
     AdvancedPriceHistoryResponse,
     AdvancedPriceResponse,
     FullPriceResponse,
     PriceHistoryResolutionRequest,
     PriceHistoryResponse,
-    PriceResponse,
     PriceHistoryStats,
+    PriceResponse,
     TokenNetworkResponse,
-    resolution_request_to_time_bucket
+    resolution_request_to_time_bucket,
 )
+from sqlalchemy.orm import Session
+
 from database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
@@ -37,7 +37,7 @@ EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(","
 
 
 def _alert_check_worker(stop_event: threading.Event) -> None:
-    logger.info(f"Alert check worker started")
+    logger.info("Alert check worker started")
     next_run = monotonic()
     while not stop_event.is_set():
         try:
@@ -53,6 +53,7 @@ def _alert_check_worker(stop_event: threading.Event) -> None:
         delay = max(0, next_run - monotonic())
         if stop_event.wait(delay):
             break
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -228,13 +229,18 @@ def get_available_tokens(db: Session = Depends(get_db)) -> list[TokenNetworkResp
     response_model=schemas.Alert,
     status_code=201,
 )
-def create_alert(alert: schemas.AlertCreate, db: Session = Depends(get_db)) -> schemas.Alert:
+def create_alert(
+    alert: schemas.AlertCreate, db: Session = Depends(get_db)
+) -> schemas.Alert:
     """Create a new alert.
 
     Validates the primary market constraint (only available on Ethereum) and delegates
     creation to crud.create_alert. Returns the created alert as AlertRead.
     """
-    if len(EMAIL_RECIPIENT_WHITELIST) > 0 and alert.email not in EMAIL_RECIPIENT_WHITELIST:
+    if (
+        len(EMAIL_RECIPIENT_WHITELIST) > 0
+        and alert.email not in EMAIL_RECIPIENT_WHITELIST
+    ):
         raise HTTPException(
             status_code=400,
             detail="Email recipient is not in the allowed whitelist.",
@@ -251,7 +257,7 @@ def create_alert(alert: schemas.AlertCreate, db: Session = Depends(get_db)) -> s
         raise HTTPException(
             status_code=400,
             detail="The specified token, network, and market type combination is not available.",
-    )
+        )
 
     alert_created: schemas.Alert = crud.create_alert(db, alert)
     return alert_created

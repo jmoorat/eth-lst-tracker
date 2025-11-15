@@ -1,11 +1,10 @@
 from collections import namedtuple
-from enum import Enum
-
-from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
 
 import models
 import schemas
+from sqlalchemy.orm import Session
+from sqlalchemy.sql import text
+
 
 def get_last_prices(db: Session):
     sql = text("""
@@ -116,6 +115,7 @@ def get_price_history(
 def get_available_tokens_and_networks(db: Session):
     return db.query(models.TokenListing).all()
 
+
 def check_available_token_network_market_type(
     db: Session, token_name: str, network: str, is_primary_market: bool
 ) -> bool:
@@ -130,6 +130,7 @@ def check_available_token_network_market_type(
     )
     return result is not None
 
+
 def create_alert(db: Session, alert: schemas.AlertCreate):
     """Create an Alert row from a Pydantic AlertCreate.
 
@@ -143,6 +144,7 @@ def create_alert(db: Session, alert: schemas.AlertCreate):
     db.refresh(alert_model)
     return schemas.Alert.model_validate(alert_model, from_attributes=True)
 
+
 def get_alerts_to_evaluate(db: Session):
     """Get all active alerts that need to be evaluated."""
     return (
@@ -150,6 +152,7 @@ def get_alerts_to_evaluate(db: Session):
         .filter(models.Alert.status == schemas.AlertStatus.ACTIVE)
         .all()
     )
+
 
 def save_alert(db: Session, alert: models.Alert):
     """Save changes to an existing alert."""

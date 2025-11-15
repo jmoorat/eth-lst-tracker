@@ -28,6 +28,7 @@ class QueryableTimeBucket(StrEnum):
     ONE_WEEK = "1 week"
     ONE_MONTH = "1 month"
 
+
 interval_limits_per_time_buckets = {
     QueryableTimeBucket.FIVE_MINUTES: "1 day",
     QueryableTimeBucket.ONE_HOUR: "1 week",

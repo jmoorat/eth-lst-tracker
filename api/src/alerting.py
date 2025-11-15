@@ -6,11 +6,10 @@ import smtplib
 from datetime import datetime
 from email.message import EmailMessage
 
-from sqlalchemy.orm import Session
-
 import crud
-from models import Alert, LstPrice
+from models import Alert
 from schemas import AlertStatus
+from sqlalchemy.orm import Session
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,6 +23,7 @@ SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
 FROM_ADDR = os.getenv("FROM_ADDR")
 EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
+
 
 def send_mail_notification(to_address: str, subject: str, body: str) -> None:
     """Send an email notification.
@@ -47,7 +47,11 @@ def send_mail_notification(to_address: str, subject: str, body: str) -> None:
 
 def evaluate_alert_condition(alert: Alert, current_price: dict) -> bool:
     """Evaluate if the alert condition is met based on the current price."""
-    value_to_evaluate = current_price["price_eth"] if alert.metric == "price_eth" else current_price["premium_percentage"]
+    value_to_evaluate = (
+        current_price["price_eth"]
+        if alert.metric == "price_eth"
+        else current_price["premium_percentage"]
+    )
 
     if alert.condition == "lt":
         return value_to_evaluate < alert.threshold
@@ -100,21 +104,23 @@ def run_alert_checks(db: Session) -> None:
             continue
 
         # Send notification
-        subject = f"Alert triggered for the {"price" if alert.metric == "price_eth" else "premium"} of {alert.token_name} on {alert.network}"
+        subject = f"Alert triggered for the {'price' if alert.metric == 'price_eth' else 'premium'} of {alert.token_name} on {alert.network}"
         body = (
             f"Your alert for {alert.token_name} on {alert.network} has been triggered.\n\n"
             f"Current {alert.metric}: "
-            f"{current_price["price_eth"] if alert.metric == 'price_eth' else current_price["premium_percentage"]}\n"
+            f"{current_price['price_eth'] if alert.metric == 'price_eth' else current_price['premium_percentage']}\n"
             f"Threshold: {alert.threshold}\n"
             f"Condition: {alert.condition}\n\n"
-            f"Alert ID: {str(alert.id).split("-")[0]}\n\n"
+            f"Alert ID: {str(alert.id).split('-')[0]}\n\n"
             "This is an automated message."
         )
         try:
             send_mail_notification(alert.email, subject, body)
             logger.info(f"Sent alert notification for alert {alert.id}")
         except Exception as e:
-            logger.error(f"Failed to send alert notification to {alert.email}: {str(e)}")
+            logger.error(
+                f"Failed to send alert notification to {alert.email}: {str(e)}"
+            )
             continue
 
         # Update alert status
