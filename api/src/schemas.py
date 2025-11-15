@@ -20,6 +20,7 @@ class LstPrice(BaseModel):
     def premium_percentage(self):
         return self.premium * 100
 
+
 class QueryableTimeBucket(StrEnum):
     FIVE_MINUTES = "5 minutes"
     ONE_HOUR = "1 hour"
@@ -34,6 +35,7 @@ interval_limits_per_time_buckets = {
     QueryableTimeBucket.ONE_WEEK: "1 year",
     QueryableTimeBucket.ONE_MONTH: "5 years",
 }
+
 
 class PriceHistoryResolutionRequest(StrEnum):
     FIVE_MINUTES = "5min"
@@ -110,16 +112,19 @@ class AlertMetric(StrEnum):
     price_eth = "price_eth"
     premium = "premium"
 
-class AlertComparison(StrEnum):
+
+class AlertCondition(StrEnum):
     lt = "lt"
     lte = "lte"
     gt = "gt"
     gte = "gte"
     eq = "eq"
 
+
 class AlertType(StrEnum):
     ONE_OFF = "one_off"
-    RECURRENT = "recurrent"
+    # RECURRENT = "recurrent" -- Future implementation
+
 
 class AlertStatus(StrEnum):
     ACTIVE = "active"
@@ -127,16 +132,18 @@ class AlertStatus(StrEnum):
     PAUSED = "paused"
     CANCELLED = "cancelled"
 
+
 class AlertCreate(BaseModel):
     email: EmailStr
     token_name: str
     network: str
     is_primary_market: bool
     metric: AlertMetric
-    comparison: AlertComparison
-    target_value: float
+    condition: AlertCondition
+    threshold: float
     type: AlertType
     expires_at: Optional[datetime] = None
+
 
 class Alert(BaseModel):
     id: uuid.UUID
@@ -145,10 +152,10 @@ class Alert(BaseModel):
     network: str
     is_primary_market: bool
     metric: AlertMetric
-    comparison: AlertComparison
-    target_value: float
+    condition: AlertCondition
+    threshold: float
     type: AlertType
-    status: AlertStatus = AlertStatus.ACTIVE
+    status: AlertStatus
     trigger_count: int = 0
     expires_at: Optional[datetime] = None
     created_at: datetime

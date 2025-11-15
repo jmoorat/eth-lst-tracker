@@ -49,18 +49,18 @@ def evaluate_alert_condition(alert: Alert, current_price: dict) -> bool:
     """Evaluate if the alert condition is met based on the current price."""
     value_to_evaluate = current_price["price_eth"] if alert.metric == "price_eth" else current_price["premium_percentage"]
 
-    if alert.comparison == "lt":
-        return value_to_evaluate < alert.target_value
-    elif alert.comparison == "lte":
-        return value_to_evaluate <= alert.target_value
-    elif alert.comparison == "gt":
-        return value_to_evaluate > alert.target_value
-    elif alert.comparison == "gte":
-        return value_to_evaluate >= alert.target_value
-    elif alert.comparison == "eq":
-        return value_to_evaluate == alert.target_value
+    if alert.condition == "lt":
+        return value_to_evaluate < alert.threshold
+    elif alert.condition == "lte":
+        return value_to_evaluate <= alert.threshold
+    elif alert.condition == "gt":
+        return value_to_evaluate > alert.threshold
+    elif alert.condition == "gte":
+        return value_to_evaluate >= alert.threshold
+    elif alert.condition == "eq":
+        return value_to_evaluate == alert.threshold
     else:
-        logger.error(f"Unknown alert condition: {alert.comparison}")
+        logger.error(f"Unknown alert condition: {alert.condition}")
         return False
 
 
@@ -105,8 +105,8 @@ def run_alert_checks(db: Session) -> None:
             f"Your alert for {alert.token_name} on {alert.network} has been triggered.\n\n"
             f"Current {alert.metric}: "
             f"{current_price["price_eth"] if alert.metric == 'price_eth' else current_price["premium_percentage"]}\n"
-            f"Target value: {alert.target_value}\n"
-            f"Comparison: {alert.comparison}\n\n"
+            f"Threshold: {alert.threshold}\n"
+            f"Condition: {alert.condition}\n\n"
             f"Alert ID: {str(alert.id).split("-")[0]}\n\n"
             "This is an automated message."
         )

@@ -49,9 +49,9 @@ class Alert(Base):
     network = Column(String(20), nullable=False)
     is_primary_market = Column(Boolean, nullable=False)
     metric = Column(Enum("price_eth", "premium", name="alert_metric"), nullable=False)  # 'price_eth' or 'premium_percentage'
-    target_value = Column(Numeric(20, 10), nullable=False)
-    comparison = Column(
-        Enum("lt", "lte", "gt", "gte", "eq", name="alert_comparison"), nullable=False
+    threshold = Column(Numeric(20, 10), nullable=False)
+    condition = Column(
+        Enum("lt", "lte", "gt", "gte", "eq", name="alert_condition"), nullable=False
     )
     status = Column(
         Enum("active", "triggered", "paused", "cancelled", name="alert_status"),
