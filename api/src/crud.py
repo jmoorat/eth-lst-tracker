@@ -1,9 +1,10 @@
 from collections import namedtuple
 
-import models
-import schemas
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
+
+import models
+import schemas
 
 
 def get_last_prices(db: Session):

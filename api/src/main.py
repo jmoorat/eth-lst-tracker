@@ -4,11 +4,14 @@ import threading
 from contextlib import asynccontextmanager, suppress
 from time import monotonic
 
+from fastapi import Depends, FastAPI, HTTPException
+from sqlalchemy.orm import Session
+
 import alerting
 import crud
 import models
 import schemas
-from fastapi import Depends, FastAPI, HTTPException
+from database import SessionLocal, engine
 from schemas import (
     AdvancedPriceHistoryResponse,
     AdvancedPriceResponse,
@@ -20,9 +23,6 @@ from schemas import (
     TokenNetworkResponse,
     resolution_request_to_time_bucket,
 )
-from sqlalchemy.orm import Session
-
-from database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 

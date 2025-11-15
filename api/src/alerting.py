@@ -6,10 +6,11 @@ import smtplib
 from datetime import datetime
 from email.message import EmailMessage
 
+from sqlalchemy.orm import Session
+
 import crud
 from models import Alert
 from schemas import AlertStatus
-from sqlalchemy.orm import Session
 
 logging.basicConfig(
     level=logging.INFO,
@@ -104,7 +105,8 @@ def run_alert_checks(db: Session) -> None:
             continue
 
         # Send notification
-        subject = f"Alert triggered for the {'price' if alert.metric == 'price_eth' else 'premium'} of {alert.token_name} on {alert.network}"
+        alert_metric_name = "price" if alert.metric == "price_eth" else "premium"
+        subject = f"Alert triggered for the {alert_metric_name} of {alert.token_name} on {alert.network}"
         body = (
             f"Your alert for {alert.token_name} on {alert.network} has been triggered.\n\n"
             f"Current {alert.metric}: "
