@@ -22,7 +22,7 @@ from price_fetcher.SecondaryMarketPriceFetcher import (
     UnsupportedChainException,
     UnsupportedTokenException,
 )
-from utils import chains, eth_price_to_string, get_premium, SecondaryMarket
+from utils import SecondaryMarket, chains, eth_price_to_string, get_premium
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -39,9 +39,7 @@ def load_config(config_file_path: str):
         return json.load(f)
 
 
-def get_env_or_default_or_required(
-    env_key: str, default_value: Optional[str] = None
-) -> dict:
+def get_env_or_default_or_required(env_key: str, default_value: Optional[str] = None) -> dict:
     env_value = os.getenv(env_key)
 
     if env_value is not None and env_value != "":
@@ -70,18 +68,12 @@ def main(
         ):
             token_address = token["token_addresses"]["ethereum"]
             chain = "ethereum"
-            contract = web3_provider.eth.contract(
-                address=token_address, abi=token["native_contract_abi"]
-            )
-            get_exchange_rate_function = contract.functions[
-                token["get_exchange_rate_function_name"]
-            ]
+            contract = web3_provider.eth.contract(address=token_address, abi=token["native_contract_abi"])
+            get_exchange_rate_function = contract.functions[token["get_exchange_rate_function_name"]]
             try:
                 primary_market_price = get_exchange_rate_function().call()
             except Exception as e:
-                logging.warning(
-                    f"Failed to get primary market rate for {token['token_name']} on {chain}: {str(e)}"
-                )
+                logging.warning(f"Failed to get primary market rate for {token['token_name']} on {chain}: {str(e)}")
                 continue
 
             if primary_market_price >= 0:
@@ -116,9 +108,7 @@ def main(
                 UnsupportedTokenException,
                 CannotGetPriceException,
             ) as e:
-                logging.warning(
-                    f"Failed to get price for {token['token_name']} on {chain}: {str(e)}"
-                )
+                logging.warning(f"Failed to get price for {token['token_name']} on {chain}: {str(e)}")
                 continue
 
             premium = get_premium(primary_market_price, price)
@@ -189,12 +179,10 @@ if __name__ == "__main__":
 
     # Setup secondary market price fetcher
     if args.secondary_market == SecondaryMarket.PARASWAP:
-        secondary_market_price_fetcher: SecondaryMarketPriceFetcher = (
-            ParaswapPriceFetcher(os.getenv("HTTP_PROXY"))
-        )
+        secondary_market_price_fetcher: SecondaryMarketPriceFetcher = ParaswapPriceFetcher(os.getenv("HTTP_PROXY"))
     else:
-        secondary_market_price_fetcher: SecondaryMarketPriceFetcher = (
-            OneInchPriceFetcher(os.getenv("ONE_INCH_API_KEY"), os.getenv("HTTP_PROXY"))
+        secondary_market_price_fetcher: SecondaryMarketPriceFetcher = OneInchPriceFetcher(
+            os.getenv("ONE_INCH_API_KEY"), os.getenv("HTTP_PROXY")
         )
 
     # Setup data saver

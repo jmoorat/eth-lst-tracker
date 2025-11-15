@@ -17,9 +17,7 @@ class SecondaryMarketPriceFetcher(ABC):
     one_ether = 10**18
 
     @abstractmethod
-    def get_price(
-        self, network: str, token_address: str, eth_token_address: str
-    ) -> int:
+    def get_price(self, network: str, token_address: str, eth_token_address: str) -> int:
         """
         Get price in ETH from secondary market for given token on given network
 

@@ -13,5 +13,16 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.11.6",
+    "ruff>=0.14.5",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]  # pycodestyle, pyflakes, and import sorting
+ignore = []
+
+[tool.ruff.format]
+docstring-code-format = true

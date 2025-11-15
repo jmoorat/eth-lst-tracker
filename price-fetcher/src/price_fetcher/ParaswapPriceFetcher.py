@@ -28,13 +28,9 @@ class ParaswapPriceFetcher(SecondaryMarketPriceFetcher):
             100,  # gnosis
         ]
 
-    def get_price(
-        self, chain_id: int, token_address: str, eth_token_address: str
-    ) -> int:
+    def get_price(self, chain_id: int, token_address: str, eth_token_address: str) -> int:
         if chain_id not in self.supported_chain_ids:
-            raise UnsupportedChainException(
-                f"Chain id {chain_id} is not supported by Paraswap"
-            )
+            raise UnsupportedChainException(f"Chain id {chain_id} is not supported by Paraswap")
 
         time.sleep(random.uniform(1, 3))  # rate limit
         quote_params = {
@@ -56,9 +52,7 @@ class ParaswapPriceFetcher(SecondaryMarketPriceFetcher):
             )
 
         if response.status_code != 200:
-            raise CannotGetPriceException(
-                f"{response.status_code} error from Paraswap: {response.reason}"
-            )
+            raise CannotGetPriceException(f"{response.status_code} error from Paraswap: {response.reason}")
 
         data = response.json()
         return int(data["priceRoute"]["destAmount"])

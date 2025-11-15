@@ -18,6 +18,7 @@ class FakeDataSaver(DataSaver):
         premium: float,
     ):
         logging.debug(
-            f"Saving data point: {timestamp}, {token_name}, {price_eth}, {price_usd}, {network}, {is_primary_market}, {premium}"
+            f"Saving data point: {timestamp}, {token_name}, {price_eth}, {price_usd}, {network}, {is_primary_market}, "
+            f"{premium}"
         )
         return

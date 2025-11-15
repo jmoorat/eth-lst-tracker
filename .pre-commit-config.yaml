@@ -1,0 +1,11 @@
+repos:
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.14.5
+  hooks:
+      - id: ruff-check
+        name: ruff lint
+        args: ["--select=E,F"]  # run lint-only on commit; imports handled separately
+      - id: ruff-check
+        name: ruff import-sort
+        args: ["--select=I", "--fix"]
+      - id: ruff-format
