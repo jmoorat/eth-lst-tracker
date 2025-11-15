@@ -17,11 +17,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT"))
-SMTP_USER = os.getenv("SMTP_USER")
-SMTP_PASS = os.getenv("SMTP_PASS")
-FROM_ADDR = os.getenv("FROM_ADDR")
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT"), 25)
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+FROM_ADDR = os.getenv("FROM_ADDR", "")
 EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
 
 
