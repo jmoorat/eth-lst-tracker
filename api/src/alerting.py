@@ -1,7 +1,5 @@
 """Alert evaluation entry points used by background workers."""
 
-from __future__ import annotations
-
 import logging
 import os
 import smtplib
@@ -25,6 +23,7 @@ SMTP_PORT = int(os.getenv("SMTP_PORT"))
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
 FROM_ADDR = os.getenv("FROM_ADDR")
+EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
 
 def send_mail_notification(to_address: str, subject: str, body: str) -> None:
     """Send an email notification.

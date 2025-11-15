@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 from contextlib import suppress, asynccontextmanager
 from time import monotonic
@@ -31,6 +32,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 ALERT_CHECK_INTERVAL_SECONDS = 600
+
+EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
 
 
 def _alert_check_worker(stop_event: threading.Event) -> None:
@@ -231,6 +234,12 @@ def create_alert(alert: schemas.AlertCreate, db: Session = Depends(get_db)) -> s
     Validates the primary market constraint (only available on Ethereum) and delegates
     creation to crud.create_alert. Returns the created alert as AlertRead.
     """
+    if alert.email not in EMAIL_RECIPIENT_WHITELIST:
+        raise HTTPException(
+            status_code=400,
+            detail="Email recipient is not in the allowed whitelist.",
+        )
+
     if alert.is_primary_market and alert.network != "ethereum":
         raise HTTPException(
             status_code=400, detail="Primary market is only available on Ethereum"
