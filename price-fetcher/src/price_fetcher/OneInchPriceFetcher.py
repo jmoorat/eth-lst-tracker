@@ -26,13 +26,9 @@ class OneInchPriceFetcher(SecondaryMarketPriceFetcher):
             324,  # zksync
         ]
 
-    def get_price(
-        self, chain_id: int, token_address: str, eth_token_address: str
-    ) -> int:
+    def get_price(self, chain_id: int, token_address: str, eth_token_address: str) -> int:
         if chain_id not in self.supported_chain_ids:
-            raise UnsupportedChainException(
-                f"Chain id {chain_id} is not supported by 1inch"
-            )
+            raise UnsupportedChainException(f"Chain id {chain_id} is not supported by 1inch")
 
         time.sleep(1)  # rate limit
         quote_params = {
@@ -54,9 +50,7 @@ class OneInchPriceFetcher(SecondaryMarketPriceFetcher):
             )
 
         if response.status_code != 200:
-            raise CannotGetPriceException(
-                f"{response.status_code} error from 1inch: {response.reason}"
-            )
+            raise CannotGetPriceException(f"{response.status_code} error from 1inch: {response.reason}")
 
         data = response.json()
         return int(data["toAmount"])
