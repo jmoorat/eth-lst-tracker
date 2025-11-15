@@ -1,87 +1,91 @@
-from datetime import datetime
-from enum import Enum
+import logging
+import os
+import threading
+from contextlib import asynccontextmanager, suppress
+from time import monotonic
 
 from fastapi import Depends, FastAPI, HTTPException
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+import alerting
 import crud
 import models
-from crud import QueryableTimeBucket
+import schemas
 from database import SessionLocal, engine
+from schemas import (
+    AdvancedPriceHistoryResponse,
+    AdvancedPriceResponse,
+    FullPriceResponse,
+    PriceHistoryResolutionRequest,
+    PriceHistoryResponse,
+    PriceHistoryStats,
+    PriceResponse,
+    TokenNetworkResponse,
+    resolution_request_to_time_bucket,
+)
 
 models.Base.metadata.create_all(bind=engine)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+ALERT_CHECK_INTERVAL_SECONDS = 600
+
+EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
+
+
+def _alert_check_worker(stop_event: threading.Event) -> None:
+    logger.info("Alert check worker started")
+    next_run = monotonic()
+    while not stop_event.is_set():
+        try:
+            db = SessionLocal()
+            try:
+                alerting.run_alert_checks(db)
+            finally:
+                db.close()
+        except Exception:  # pragma: no cover - defensive logging
+            logger.exception("Failed to execute alert checks")
+
+        next_run += ALERT_CHECK_INTERVAL_SECONDS
+        delay = max(0, next_run - monotonic())
+        if stop_event.wait(delay):
+            break
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    stop_event = threading.Event()
+    thread = threading.Thread(
+        target=_alert_check_worker,
+        args=(stop_event,),
+        name="alert-check-worker",
+        daemon=True,
+    )
+    thread.start()
+    app.state.alert_check_stop_event = stop_event
+    app.state.alert_check_thread = thread
+
+    yield
+
+    stop_event = getattr(app.state, "alert_check_stop_event", None)
+    thread = getattr(app.state, "alert_check_thread", None)
+    if stop_event is not None:
+        stop_event.set()
+    if thread is not None:
+        with suppress(RuntimeError):
+            thread.join()
+
+
 app = FastAPI(
     title="ETH LST tracker API",
     summary="API to track prices and premiums of various Ethereum Liquid Staking Tokens (LST).",
     docs_url=None,
     redoc_url="/docs",
+    lifespan=lifespan,
 )
-
-
-class PriceHistoryResolutionRequest(str, Enum):
-    FIVE_MINUTES = "5min"
-    ONE_HOUR = "1h"
-    ONE_DAY = "1d"
-    ONE_WEEK = "1w"
-    ONE_MONTH = "1m"
-
-
-resolution_request_to_time_bucket = {
-    PriceHistoryResolutionRequest.FIVE_MINUTES: QueryableTimeBucket.FIVE_MINUTES,
-    PriceHistoryResolutionRequest.ONE_HOUR: QueryableTimeBucket.ONE_HOUR,
-    PriceHistoryResolutionRequest.ONE_DAY: QueryableTimeBucket.ONE_DAY,
-    PriceHistoryResolutionRequest.ONE_WEEK: QueryableTimeBucket.ONE_WEEK,
-    PriceHistoryResolutionRequest.ONE_MONTH: QueryableTimeBucket.ONE_MONTH,
-}
-
-
-class PriceHistoryResponse(BaseModel):
-    timestamp: datetime
-    price_eth: float
-    premium_percentage: float
-
-
-class PriceResponse(BaseModel):
-    token_name: str
-    network: str
-    is_primary_market: bool
-    prices: list[PriceHistoryResponse]
-
-
-class PriceHistoryStats(BaseModel):
-    first: float
-    min: float
-    avg: float
-    max: float
-    last: float
-
-
-class AdvancedPriceHistoryResponse(BaseModel):
-    timestamp: datetime
-    price_eth: PriceHistoryStats
-    premium_percentage: PriceHistoryStats
-
-
-class AdvancedPriceResponse(BaseModel):
-    token_name: str
-    network: str
-    is_primary_market: bool
-    prices: list[AdvancedPriceHistoryResponse]
-
-
-class FullPriceResponse(BaseModel):
-    timestamp: datetime
-    token_name: str
-    network: str
-    is_primary_market: bool
-    price_eth: float
-    premium_percentage: float
-
-
-class TokenNetworksResponse(BaseModel):
-    token_name: str
-    networks: list[str]
 
 
 # Dependency
@@ -108,9 +112,7 @@ def get_price_history(
     db: Session = Depends(get_db),
 ) -> PriceResponse:
     if primary_market and network != "ethereum":
-        raise HTTPException(
-            status_code=400, detail="Primary market is only available on Ethereum"
-        )
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
     result = crud.get_price_history(
         db,
@@ -147,9 +149,7 @@ def get_advanced_price_history(
     db: Session = Depends(get_db),
 ) -> AdvancedPriceResponse:
     if primary_market and network != "ethereum":
-        raise HTTPException(
-            status_code=400, detail="Primary market is only available on Ethereum"
-        )
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
     result = crud.get_price_history(
         db,
@@ -199,9 +199,7 @@ def get_last_price(
     last_price = crud.get_last_price(db, token_name, network, primary_market)
 
     if primary_market and network != "ethereum":
-        raise HTTPException(
-            status_code=400, detail="Primary market is only available on Ethereum"
-        )
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
     if not last_price:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -215,6 +213,40 @@ def get_last_price(
 
 
 @app.get("/tokens")
-def get_available_tokens(db: Session = Depends(get_db)) -> list[TokenNetworksResponse]:
+def get_available_tokens(db: Session = Depends(get_db)) -> list[TokenNetworkResponse]:
     result = crud.get_available_tokens_and_networks(db)
-    return [TokenNetworksResponse(**r) for r in result]
+    return result
+
+
+@app.post(
+    "/alerts",
+    response_model=schemas.Alert,
+    status_code=201,
+)
+def create_alert(alert: schemas.AlertCreate, db: Session = Depends(get_db)) -> schemas.Alert:
+    """Create a new alert.
+
+    Validates the primary market constraint (only available on Ethereum) and delegates
+    creation to crud.create_alert. Returns the created alert as AlertRead.
+    """
+    if (
+        EMAIL_RECIPIENT_WHITELIST != ["*"]
+        and EMAIL_RECIPIENT_WHITELIST != [""]
+        and alert.email not in EMAIL_RECIPIENT_WHITELIST
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Email recipient is not in the allowed whitelist.",
+        )
+
+    if alert.is_primary_market and alert.network != "ethereum":
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
+
+    if not crud.check_available_token_network_market_type(db, alert.token_name, alert.network, alert.is_primary_market):
+        raise HTTPException(
+            status_code=400,
+            detail="The specified token, network, and market type combination is not available.",
+        )
+
+    alert_created: schemas.Alert = crud.create_alert(db, alert)
+    return alert_created

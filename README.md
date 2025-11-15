@@ -23,7 +23,7 @@ This tool allows identifying arbitrage opportunities between primary and seconda
 ### Database configuration
 
 You can either use the TimescaleDB Docker image used in the docker-compose file or set up a TimescaleDB database on your own.
-If you choose to set up your own instance, make sur to create a database with the TimescaleDB extension enabled and the prices table as defined in the `database/prices.sql` file.
+If you choose to set up your own instance, make sur to create a database with the TimescaleDB extension enabled and the prices table as defined in the `database/init.sql` file.
 
 ### Setup with the provided Docker compose file (including a TimescaleDB instance)
 
