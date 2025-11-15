@@ -234,7 +234,7 @@ def create_alert(alert: schemas.AlertCreate, db: Session = Depends(get_db)) -> s
     Validates the primary market constraint (only available on Ethereum) and delegates
     creation to crud.create_alert. Returns the created alert as AlertRead.
     """
-    if alert.email not in EMAIL_RECIPIENT_WHITELIST:
+    if len(EMAIL_RECIPIENT_WHITELIST) > 0 and alert.email not in EMAIL_RECIPIENT_WHITELIST:
         raise HTTPException(
             status_code=400,
             detail="Email recipient is not in the allowed whitelist.",
