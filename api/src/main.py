@@ -238,7 +238,8 @@ def create_alert(
     creation to crud.create_alert. Returns the created alert as AlertRead.
     """
     if (
-        len(EMAIL_RECIPIENT_WHITELIST) > 0
+        EMAIL_RECIPIENT_WHITELIST != ["*"]
+        and EMAIL_RECIPIENT_WHITELIST != [""]
         and alert.email not in EMAIL_RECIPIENT_WHITELIST
     ):
         raise HTTPException(
