@@ -112,9 +112,7 @@ def get_price_history(
     db: Session = Depends(get_db),
 ) -> PriceResponse:
     if primary_market and network != "ethereum":
-        raise HTTPException(
-            status_code=400, detail="Primary market is only available on Ethereum"
-        )
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
     result = crud.get_price_history(
         db,
@@ -151,9 +149,7 @@ def get_advanced_price_history(
     db: Session = Depends(get_db),
 ) -> AdvancedPriceResponse:
     if primary_market and network != "ethereum":
-        raise HTTPException(
-            status_code=400, detail="Primary market is only available on Ethereum"
-        )
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
     result = crud.get_price_history(
         db,
@@ -203,9 +199,7 @@ def get_last_price(
     last_price = crud.get_last_price(db, token_name, network, primary_market)
 
     if primary_market and network != "ethereum":
-        raise HTTPException(
-            status_code=400, detail="Primary market is only available on Ethereum"
-        )
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
     if not last_price:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -229,9 +223,7 @@ def get_available_tokens(db: Session = Depends(get_db)) -> list[TokenNetworkResp
     response_model=schemas.Alert,
     status_code=201,
 )
-def create_alert(
-    alert: schemas.AlertCreate, db: Session = Depends(get_db)
-) -> schemas.Alert:
+def create_alert(alert: schemas.AlertCreate, db: Session = Depends(get_db)) -> schemas.Alert:
     """Create a new alert.
 
     Validates the primary market constraint (only available on Ethereum) and delegates
@@ -248,13 +240,9 @@ def create_alert(
         )
 
     if alert.is_primary_market and alert.network != "ethereum":
-        raise HTTPException(
-            status_code=400, detail="Primary market is only available on Ethereum"
-        )
+        raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
-    if not crud.check_available_token_network_market_type(
-        db, alert.token_name, alert.network, alert.is_primary_market
-    ):
+    if not crud.check_available_token_network_market_type(db, alert.token_name, alert.network, alert.is_primary_market):
         raise HTTPException(
             status_code=400,
             detail="The specified token, network, and market type combination is not available.",

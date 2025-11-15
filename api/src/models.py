@@ -63,9 +63,7 @@ class Alert(Base):
         Enum("price_eth", "premium", name="alert_metric"), nullable=False
     )  # 'price_eth' or 'premium_percentage'
     threshold = Column(Numeric(20, 10), nullable=False)
-    condition = Column(
-        Enum("lt", "lte", "gt", "gte", "eq", name="alert_condition"), nullable=False
-    )
+    condition = Column(Enum("lt", "lte", "gt", "gte", "eq", name="alert_condition"), nullable=False)
     status = Column(
         Enum("active", "triggered", "paused", "cancelled", name="alert_status"),
         nullable=False,
@@ -74,9 +72,7 @@ class Alert(Base):
     type = Column(Enum("one_off", "recurrent", name="alert_type"), nullable=False)
     note = Column(String(500))
     trigger_count = Column(Integer, nullable=False, default=0)
-    created_at = Column(
-        DateTime(timezone=True), nullable=False, server_default=func.now()
-    )
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True),
         nullable=False,

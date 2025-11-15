@@ -49,9 +49,7 @@ def send_mail_notification(to_address: str, subject: str, body: str) -> None:
 def evaluate_alert_condition(alert: Alert, current_price: dict) -> bool:
     """Evaluate if the alert condition is met based on the current price."""
     value_to_evaluate = (
-        current_price["price_eth"]
-        if alert.metric == "price_eth"
-        else current_price["premium_percentage"]
+        current_price["price_eth"] if alert.metric == "price_eth" else current_price["premium_percentage"]
     )
 
     if alert.condition == "lt":
@@ -120,9 +118,7 @@ def run_alert_checks(db: Session) -> None:
             send_mail_notification(alert.email, subject, body)
             logger.info(f"Sent alert notification for alert {alert.id}")
         except Exception as e:
-            logger.error(
-                f"Failed to send alert notification to {alert.email}: {str(e)}"
-            )
+            logger.error(f"Failed to send alert notification to {alert.email}: {str(e)}")
             continue
 
         # Update alert status

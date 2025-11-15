@@ -148,11 +148,7 @@ def create_alert(db: Session, alert: schemas.AlertCreate):
 
 def get_alerts_to_evaluate(db: Session):
     """Get all active alerts that need to be evaluated."""
-    return (
-        db.query(models.Alert)
-        .filter(models.Alert.status == schemas.AlertStatus.ACTIVE)
-        .all()
-    )
+    return db.query(models.Alert).filter(models.Alert.status == schemas.AlertStatus.ACTIVE).all()
 
 
 def save_alert(db: Session, alert: models.Alert):
