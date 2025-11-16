@@ -1,25 +1,9 @@
 <script setup lang="ts">
 import type { TableColumn } from '#ui/components/Table.vue';
-
-interface ApiToken {
-  timestamp: string;
-  token_name: string;
-  network: string;
-  is_primary_market: boolean;
-  price_eth: number;
-  premium_percentage: number;
-}
-
-const tokenNamesMap = {
-  rETH: 'RocketPool ETH',
-  wstETH: 'Lido Wrapped staked ETH',
-  sfrxETH: 'Frax staked ETH',
-  wBETH: 'Binance staked ETH',
-  cbETH: 'Coinbase staked ETH',
-} as const;
+import { getTokenFullName } from '~/utils/tokens';
 
 const route = useRoute();
-const config = useRuntimeConfig()
+const config = useRuntimeConfig();
 const tokenParam = computed(() => route.params.token_name as string);
 
 const { data: apiData, pending, error, refresh } = await useFetch<ApiToken[]>(
@@ -66,18 +50,9 @@ const tokenNotFound = computed(
 
 const tokenTitle = computed(() => getTokenFullName(tokenParam.value));
 
-const getTokenFullName = (tokenName: string): string => {
-  return tokenNamesMap[tokenName as keyof typeof tokenNamesMap] ?? tokenName;
-};
-
 const formatPrice = (price: number | null | undefined): string => {
   if (price === undefined || price === null) return 'N/A';
   return price.toFixed(4);
-};
-
-const formatPremium = (premium: number | null | undefined): string => {
-  if (premium === undefined || premium === null) return 'N/A';
-  return premium.toFixed(2);
 };
 
 const availableNetworksLabel = computed(() => {
@@ -157,7 +132,7 @@ const handleRefresh = async () => {
           </div>
           <p class="text-sm text-gray-500">
             Secondary markets available on :
-            <span class="font-medium text-gray-900">{{ availableNetworksLabel }}</span>
+            <span class="font-medium">{{ availableNetworksLabel }}</span>
           </p>
         </div>
       </UCard>
