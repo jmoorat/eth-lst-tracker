@@ -69,7 +69,7 @@ const formatPremium = (premium: number): string => {
       :key="token.token_name"
       :to="`/tokens/${token.token_name}`"
     >
-      <UCard class="mb-4 transition-colors hover:!bg-gray-800" variant="soft">
+      <UCard class="mb-4 transition-colors hover:!bg-elevated" variant="subtle">
         <div class="flex justify-between items-center">
           <div>
             <h2 class="text-xl font-semibold">{{ token.fullName }} ({{ token.token_name }})</h2>
