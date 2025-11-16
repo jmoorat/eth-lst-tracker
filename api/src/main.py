@@ -6,6 +6,7 @@ from time import monotonic
 
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
+from starlette.middleware.cors import CORSMiddleware
 
 import alerting
 import crud
@@ -85,6 +86,14 @@ app = FastAPI(
     docs_url=None,
     redoc_url="/docs",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
