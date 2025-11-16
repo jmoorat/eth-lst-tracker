@@ -52,29 +52,42 @@ const formatPremium = (premium: number): string => {
 </script>
 
 <template>
-<NuxtLink
-  v-for="token in filteredTokens"
-  :key="token.token_name"
-  :to="`/tokens/${token.token_name}`"
->
-  <UCard class="mb-4 transition-colors hover:!bg-gray-800" variant="soft">
-    <div class="flex justify-between items-center">
-      <div>
-        <h2 class="text-xl font-semibold">{{ token.fullName }} ({{ token.token_name }})</h2>
-      </div>
-      <div class="text-right">
-        <p class="text-lg font-medium">Price: {{ formatPrice(token.price_eth) }} ETH</p>
-        <p
-          class="text-sm"
-          :class="token.premium_percentage >= 0 ? 'text-green-600' : 'text-red-600'"
-        >
-          Premium: {{ formatPremium(token.premium_percentage) }}%
-        </p>
-        <p class="text-sm text-gray-500">
-          Secondary markets available: {{ token.secondary_markets_count }}
-        </p>
-      </div>
-    </div>
-  </UCard>
-</NuxtLink>
+  <UAlert v-if="error" color="error" variant="soft" class="mb-4">
+    <template #title>
+      Error loading tokens
+    </template>
+    {{ error.message || error }}
+  </UAlert>
+
+  <div v-else-if="pending">
+    <USkeleton class="h-32 mb-4" v-for="n in 3" :key="n" />
+  </div>
+
+  <template v-else>
+    <NuxtLink
+      v-for="token in filteredTokens"
+      :key="token.token_name"
+      :to="`/tokens/${token.token_name}`"
+    >
+      <UCard class="mb-4 transition-colors hover:!bg-gray-800" variant="soft">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-xl font-semibold">{{ token.fullName }} ({{ token.token_name }})</h2>
+          </div>
+          <div class="text-right">
+            <p class="text-lg font-medium">Price: {{ formatPrice(token.price_eth) }} ETH</p>
+            <p
+              class="text-sm"
+              :class="token.premium_percentage >= 0 ? 'text-green-600' : 'text-red-600'"
+            >
+              Premium: {{ formatPremium(token.premium_percentage) }}%
+            </p>
+            <p class="text-sm text-gray-500">
+              Secondary markets available: {{ token.secondary_markets_count }}
+            </p>
+          </div>
+        </div>
+      </UCard>
+    </NuxtLink>
+  </template>
 </template>
