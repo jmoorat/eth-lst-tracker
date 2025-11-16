@@ -51,8 +51,10 @@ const tokenNamesMap = {
   cbETH: 'Coinbase staked ETH',
 } as const;
 
+const config = useRuntimeConfig()
+
 const { data: apiData, pending, error, refresh } = await useFetch<ApiToken[]>(
-  'http://localhost:8000/prices',
+  `${config.public.apiBase}/prices`,
 );
 
 const isRefreshing = ref(false);

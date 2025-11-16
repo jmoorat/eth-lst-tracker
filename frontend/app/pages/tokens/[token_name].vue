@@ -19,10 +19,11 @@ const tokenNamesMap = {
 } as const;
 
 const route = useRoute();
+const config = useRuntimeConfig()
 const tokenParam = computed(() => route.params.token_name as string);
 
 const { data: apiData, pending, error, refresh } = await useFetch<ApiToken[]>(
-  'http://localhost:8000/prices',
+  `${config.public.apiBase}/prices`,
 );
 
 const isRefreshing = ref(false);
