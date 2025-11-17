@@ -1,2 +1,20 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+body {
+    @apply bg-default; /* uses your Tailwind bg-default color */
+
+    /* light glow on top center */
+    background-image: radial-gradient(
+      circle at top center,
+      rgba(0, 255, 13, 0.1) 0%,
+      rgba(255, 255, 255, 0) 50%
+    );
+
+    /* important bits ↓ */
+    background-repeat: no-repeat;      /* don't tile the glow */
+    background-position: top center;   /* keep it at the top */
+    background-size: 120% 500px;       /* how tall/wide the glow area is */
+    /* optional: keeps the glow fixed when scrolling */
+    /* background-attachment: fixed;   */
+}
