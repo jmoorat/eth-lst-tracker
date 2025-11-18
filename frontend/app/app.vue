@@ -5,7 +5,7 @@
       <header class="text-center space-y-2">
         <NuxtLink to="/">
           <div class="inline-flex flex-col items-center">
-            <Logo class="w-24 h-24 text-primary-400 mb-4" />
+            <Logo class="w-24 h-24 text-primary-400 mb-2"/>
             <h1 class="text-3xl font-semibold text-primary-400">ETH LST Tracker</h1>
           </div>
         </NuxtLink>

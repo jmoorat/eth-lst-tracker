@@ -7,7 +7,7 @@ body {
     /* light glow on top center */
     background-image: radial-gradient(
       circle at top center,
-      rgba(0, 255, 13, 0.1) 0%,
+      rgba(78, 40, 255, 0.1) 0%,
       rgba(255, 255, 255, 0) 50%
     );
 
