@@ -9,16 +9,16 @@ import schemas
 
 def get_last_prices(db: Session):
     sql = text("""
-        SELECT 
-            last(timestamp, timestamp) as timestamp,
-            token_name,
-            last(price_eth, timestamp) as price_eth,
-            network,
-            is_primary_market,
-            last(premium, timestamp)*100 as premium_percentage
+        SELECT DISTINCT ON (token_name, network, is_primary_market)
+               timestamp,
+               token_name,
+               network,
+               is_primary_market,
+               price_eth,
+               premium * 100 AS premium_percentage
         FROM prices
-        GROUP BY token_name, network, is_primary_market
-        ORDER BY token_name, is_primary_market DESC, network
+        WHERE timestamp > now() - interval '7 days'
+        ORDER BY token_name, network, is_primary_market, timestamp DESC
     """)
     result = db.execute(sql)
     Record = namedtuple("Record", list(result.keys()))
