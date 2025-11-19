@@ -11,5 +11,13 @@ export default defineNuxtConfig({
     },
     colorMode: {
         preference: 'dark'
+    },
+    app: {
+        head: {
+            title: 'ETH LST Tracker',
+            link: [
+                { rel: 'icon', type: 'image/png', href: '/favicon.png' }
+            ]
+        }
     }
 })
