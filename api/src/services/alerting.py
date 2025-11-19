@@ -35,19 +35,12 @@ def evaluate_alert_condition(alert: Alert, current_price: dict) -> bool:
     elif alert.condition == "eq":
         return value_to_evaluate == alert.threshold
     else:
-        logger.error(f"Unknown alert condition: {alert.condition}")
+        logger.error("Unknown alert condition: %s", alert.condition)
         return False
 
 
 def run_alert_checks(db: Session) -> None:
-    """Evaluate active alerts and trigger notifications.
-
-    The concrete implementation depends on how alerts are stored and how
-    notifications should be delivered. The APScheduler background job configured
-    in ``api/src/main.py`` will call this function every 10 minutes.
-    """
-
-    # Get all active alerts and current prices
+    """Evaluate active alerts and trigger notifications."""
     alerts: list[Alert] = alert_data.get_active_alerts(db)
     current_prices: list[dict] = price_data.get_last_prices(db)
 
@@ -64,8 +57,11 @@ def run_alert_checks(db: Session) -> None:
         )
         if not current_price:
             logger.warning(
-                f"No current price found for alert {alert.id} "
-                f"({alert.token_name} on {alert.network}, primary market: {alert.is_primary_market})"
+                "No current price found for alert %s (%s on %s, primary market: %s)",
+                alert.id,
+                alert.token_name,
+                alert.network,
+                alert.is_primary_market,
             )
             continue
 
@@ -74,7 +70,6 @@ def run_alert_checks(db: Session) -> None:
         if not is_triggered:
             continue
 
-        # Send notification
         alert_metric_name = "price" if alert.metric == "price_eth" else "premium"
         subject = f"Alert triggered for the {alert_metric_name} of {alert.token_name} on {alert.network}"
         body = (
@@ -88,12 +83,11 @@ def run_alert_checks(db: Session) -> None:
         )
         try:
             send_mail_notification(alert.email, subject, body)
-            logger.info(f"Sent alert notification for alert {alert.id}")
-        except Exception as e:
-            logger.error(f"Failed to send alert notification to {alert.email}: {str(e)}")
+            logger.info("Sent alert notification for alert %s", alert.id)
+        except Exception as exc:  # pragma: no cover - external dependency
+            logger.error("Failed to send alert notification to %s: %s", alert.email, exc)
             continue
 
-        # Update alert status
         alert.trigger_count += 1
         alert.last_triggered_at = datetime.utcnow()
         alert.status = AlertStatus.TRIGGERED

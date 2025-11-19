@@ -1,8 +1,8 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-import auth
 from schemas.auth import AuthenticatedUser
+from services import auth
 
 auth_scheme = HTTPBearer(auto_error=False)
 

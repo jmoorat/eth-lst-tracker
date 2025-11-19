@@ -3,7 +3,6 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-import auth
 from database import get_db
 from schemas.auth import (
     AuthChallengeRequest,
@@ -11,6 +10,7 @@ from schemas.auth import (
     AuthLoginRequest,
     TokenResponse,
 )
+from services import auth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
