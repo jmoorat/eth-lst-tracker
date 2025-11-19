@@ -1,49 +1,21 @@
 """Alert evaluation entry points used by background workers."""
 
 import logging
-import os
-import smtplib
 from datetime import datetime
-from email.message import EmailMessage
 
 from sqlalchemy.orm import Session
 
-import crud
+from data_access import alerts as alert_data
+from data_access import prices as price_data
 from models import Alert
-from schemas import AlertStatus
+from schemas.alert import AlertStatus
+from utils.email import send_mail_notification
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-SMTP_HOST = os.getenv("SMTP_HOST", "")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASS = os.getenv("SMTP_PASS", "")
-FROM_ADDR = os.getenv("FROM_ADDR", "")
-EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
-
-
-def send_mail_notification(to_address: str, subject: str, body: str) -> None:
-    """Send an email notification.
-
-    This is a stub implementation. Replace it with actual email sending logic.
-    """
-
-    msg = EmailMessage()
-    msg["From"] = FROM_ADDR
-    msg["To"] = to_address
-    msg["Subject"] = subject
-    msg.set_content(body)
-
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as smtp:
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.ehlo()
-        smtp.login(SMTP_USER, SMTP_PASS)
-        smtp.send_message(msg)
 
 
 def evaluate_alert_condition(alert: Alert, current_price: dict) -> bool:
@@ -76,8 +48,8 @@ def run_alert_checks(db: Session) -> None:
     """
 
     # Get all active alerts and current prices
-    alerts: list[Alert] = crud.get_alerts_to_evaluate(db)
-    current_prices: list[dict] = crud.get_last_prices(db)
+    alerts: list[Alert] = alert_data.get_active_alerts(db)
+    current_prices: list[dict] = price_data.get_last_prices(db)
 
     for alert in alerts:
         current_price = next(
@@ -125,4 +97,4 @@ def run_alert_checks(db: Session) -> None:
         alert.trigger_count += 1
         alert.last_triggered_at = datetime.utcnow()
         alert.status = AlertStatus.TRIGGERED
-        crud.save_alert(db, alert)
+        alert_data.save_alert(db, alert)

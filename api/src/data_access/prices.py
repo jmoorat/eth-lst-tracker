@@ -5,6 +5,7 @@ from sqlalchemy.sql import text
 
 import models
 import schemas
+import schemas.price
 
 
 def get_last_prices(db: Session):
@@ -21,8 +22,8 @@ def get_last_prices(db: Session):
         ORDER BY token_name, network, is_primary_market, timestamp DESC
     """)
     result = db.execute(sql)
-    Record = namedtuple("Record", list(result.keys()))
-    records = [Record(*r)._asdict() for r in result.fetchall()]
+    record_cls = namedtuple("Record", list(result.keys()))
+    records = [record_cls(*r)._asdict() for r in result.fetchall()]
     return records
 
 
@@ -45,9 +46,9 @@ def get_last_price(db: Session, token_name: str, network: str, is_primary_market
             "is_primary_market": is_primary_market,
         },
     )
-    Record = namedtuple("Record", result.keys())
-    records = [Record(*r)._asdict() for r in result.fetchall()]
-    if len(records) == 0:
+    record_cls = namedtuple("Record", result.keys())
+    records = [record_cls(*r)._asdict() for r in result.fetchall()]
+    if not records:
         return None
     return records[0]
 
@@ -58,19 +59,19 @@ def get_price_history(
     network: str,
     is_primary_market: bool,
     advanced: bool,
-    time_bucket: schemas.QueryableTimeBucket,
+    time_bucket: schemas.price.QueryableTimeBucket,
 ):
     if advanced:
         sql = text("""
-           SELECT 
+           SELECT
                time_bucket(:time_bucket, timestamp) as time_bucket,
-               
+
                min(price_eth) as min_price_eth,
                max(price_eth) as max_price_eth,
                avg(price_eth) as avg_price_eth,
                first(price_eth, timestamp) as first_price_eth,
                last(price_eth, timestamp) as last_price_eth,
-               
+
                round(min(premium)*100, 3) as min_premium_percentage,
                round(max(premium)*100, 3) as max_premium_percentage,
                round(avg(premium)*100, 3) as avg_premium_percentage,
@@ -105,54 +106,13 @@ def get_price_history(
             "network": network,
             "is_primary_market": is_primary_market,
             "time_bucket": time_bucket,
-            "time_window": schemas.interval_limits_per_time_buckets[time_bucket],
+            "time_window": schemas.price.interval_limits_per_time_buckets[time_bucket],
         },
     )
-    Record = namedtuple("Record", result.keys())
-    records = [Record(*r)._asdict() for r in result.fetchall()]
+    record_cls = namedtuple("Record", result.keys())
+    records = [record_cls(*r)._asdict() for r in result.fetchall()]
     return records
 
 
 def get_available_tokens_and_networks(db: Session):
     return db.query(models.TokenListing).all()
-
-
-def check_available_token_network_market_type(
-    db: Session, token_name: str, network: str, is_primary_market: bool
-) -> bool:
-    result = (
-        db.query(models.TokenListing)
-        .filter(
-            models.TokenListing.token_name == token_name,
-            models.TokenListing.network == network,
-            models.TokenListing.is_primary_market == is_primary_market,
-        )
-        .first()
-    )
-    return result is not None
-
-
-def create_alert(db: Session, alert: schemas.AlertCreate):
-    """Create an Alert row from a Pydantic AlertCreate.
-
-    Excludes client-side-only fields (like `cooldown_seconds`) before creating the SQLAlchemy model.
-    Returns a dict compatible with schemas.AlertRead (created/updated timestamps included).
-    """
-    data = alert.model_dump()
-    alert_model = models.Alert(**data)
-    db.add(alert_model)
-    db.commit()
-    db.refresh(alert_model)
-    return schemas.Alert.model_validate(alert_model, from_attributes=True)
-
-
-def get_alerts_to_evaluate(db: Session):
-    """Get all active alerts that need to be evaluated."""
-    return db.query(models.Alert).filter(models.Alert.status == schemas.AlertStatus.ACTIVE).all()
-
-
-def save_alert(db: Session, alert: models.Alert):
-    """Save changes to an existing alert."""
-    db.commit()
-    db.refresh(alert)
-    return alert
