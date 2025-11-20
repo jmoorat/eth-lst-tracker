@@ -10,6 +10,7 @@
       }"
     >
       <template #body>
+        <UAlert v-if="errorMessage" color="error" variant="soft" title="Oops" :description="errorMessage " class="mb-4" />
         <div class="space-y-4" v-if="!challengeSent">
           <UInput
             v-model="email"
@@ -123,7 +124,7 @@ const sendChallenge = async () => {
     challengeSent.value = true;
     successMessage.value = 'Login code sent to your email address.';
   } catch (error: any) {
-    errorMessage.value = error?.data?.detail || error?.message || 'Failed to send login code.';
+    errorMessage.value = error?.data?.detail[0]?.msg || error?.data?.detail || 'Failed to send login code.';
   } finally {
     sendingChallenge.value = false;
   }
@@ -148,7 +149,7 @@ const verifyCode = async () => {
     saveToken(response);
     emit('logged-in');
   } catch (error: any) {
-    errorMessage.value = error?.data?.detail || error?.message || 'Invalid code.';
+    errorMessage.value = error?.data?.detail || error?.detail || 'Invalid code.';
   } finally {
     verifyingCode.value = false;
   }
