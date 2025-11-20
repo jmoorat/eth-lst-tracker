@@ -4,6 +4,12 @@
       <div class="space-y-10">
         <header class="relative space-y-2">
           <div class="absolute top-0 right-0 flex items-center gap-2">
+            <span
+              v-if="authState.loggedIn && authState.email"
+              class="hidden sm:inline text-sm text-gray-400"
+            >
+              {{ authState.email }}
+            </span>
             <UTooltip :text="authState.loggedIn ? 'Log out' : 'Log in'">
               <UButton
                 :icon="authState.loggedIn ? 'i-heroicons-arrow-right-on-rectangle' : 'i-heroicons-arrow-left-on-rectangle'"
