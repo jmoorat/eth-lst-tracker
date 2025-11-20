@@ -117,11 +117,10 @@ def get_last_price(
     primary_market: bool = False,
     db: Session = Depends(get_db),
 ) -> FullPriceResponse:
-    last_price = price_data.get_last_price(db, token_name, network, primary_market)
-
     if primary_market and network != "ethereum":
         raise HTTPException(status_code=400, detail="Primary market is only available on Ethereum")
 
+    last_price = price_data.get_last_price(db, token_name, network, primary_market)
     if not last_price:
         raise HTTPException(status_code=404, detail="Item not found")
 
