@@ -1,5 +1,3 @@
-import os
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,8 +6,7 @@ from data_access import alerts as alert_data
 from database import get_db
 from schemas.auth import AuthenticatedUser
 from security import get_current_user
-
-EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
+from utils.email import is_email_address_in_whitelist
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -30,14 +27,10 @@ def create_alert(
     if alert.email != user_email:
         raise HTTPException(status_code=403, detail="Authenticated user does not match alert email.")
 
-    if (
-        EMAIL_RECIPIENT_WHITELIST != ["*"]
-        and EMAIL_RECIPIENT_WHITELIST != [""]
-        and alert.email not in EMAIL_RECIPIENT_WHITELIST
-    ):
+    if not is_email_address_in_whitelist(alert.email):
         raise HTTPException(
-            status_code=400,
-            detail="Email recipient is not in the allowed whitelist.",
+            status_code=401,
+            detail="Email address not allowed",
         )
 
     if alert.is_primary_market and alert.network != "ethereum":

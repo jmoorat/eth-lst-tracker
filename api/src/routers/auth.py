@@ -12,6 +12,7 @@ from schemas.auth import (
     TokenResponse,
 )
 from services import auth
+from utils.email import is_email_address_in_whitelist
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -30,6 +31,13 @@ def request_auth_challenge(
     db: Session = Depends(get_db),
 ) -> AuthChallengeResponse:
     challenge, code = auth.create_auth_challenge(db, payload.email)
+
+    if not is_email_address_in_whitelist(payload.email):
+        raise HTTPException(
+            status_code=401,
+            detail="Email address not allowed",
+        )
+
     try:
         auth.send_challenge_email(payload.email, code)
     except Exception as exc:  # pragma: no cover - depends on SMTP availability
