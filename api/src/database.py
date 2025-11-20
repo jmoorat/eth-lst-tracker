@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
+if not SQLALCHEMY_DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is not set. Please set it to a valid database URL.")
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"options": "-c timezone=utc"})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
