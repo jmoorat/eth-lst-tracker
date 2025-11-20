@@ -11,50 +11,57 @@
     >
       <template #body>
         <UAlert v-if="errorMessage" color="error" variant="soft" title="Oops" :description="errorMessage " class="mb-4" />
-        <div class="space-y-4" v-if="!challengeSent">
-          <UInput
-            v-model="email"
-            type="text"
-            placeholder="you@example.com"
-            size="xl"
-            class="w-full"
-            :disabled="sendingChallenge || verifyingCode"
-          />
+        <UForm class="space-y-4" v-if="!challengeSent" @submit="sendChallenge">
+          <UFormField label="Email Address" required>
+            <UInput
+              v-model="email"
+              type="text"
+              placeholder="you@example.com"
+              size="xl"
+              class="w-full"
+              :disabled="sendingChallenge || verifyingCode"
+            />
+          </UFormField>
 
           <UButton
             block
             color="primary"
+            icon="i-heroicons-envelope"
             :loading="sendingChallenge"
             :disabled="!email"
-            @click="sendChallenge"
+            type="submit"
           >
             Send login code
           </UButton>
-        </div>
+        </UForm>
 
-        <div v-else class="space-y-4">
+        <UForm v-else class="space-y-4" @submit="verifyCode">
           <p class="text-sm">
             We sent a 6-digit code to {{ email }}. Enter it below to finish logging in.
           </p>
-          <UInput
-            v-model="code"
-            type="text"
-            placeholder="123456"
-            size="xl"
-            class="w-full"
-            :disabled="verifyingCode"
-          />
+          <UFormField label="6-Digit Code" required>
+            <UInput
+              v-model="code"
+              type="text"
+              placeholder="123456"
+              size="xl"
+              class="w-full"
+              :disabled="verifyingCode"
+            />
+
+          </UFormField>
 
           <UButton
             block
             color="primary"
+            icon="i-heroicons-check"
             :loading="verifyingCode"
             :disabled="code.trim().length !== 6"
-            @click="verifyCode"
+            type="submit"
           >
             Verify code and login
           </UButton>
-        </div>
+        </UForm>
       </template>
     </UModal>
   </ClientOnly>
