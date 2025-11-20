@@ -1,49 +1,21 @@
 """Alert evaluation entry points used by background workers."""
 
 import logging
-import os
-import smtplib
 from datetime import datetime
-from email.message import EmailMessage
 
 from sqlalchemy.orm import Session
 
-import crud
+from data_access import alerts as alert_data
+from data_access import prices as price_data
 from models import Alert
-from schemas import AlertStatus
+from schemas.alert import AlertStatus
+from utils.email import send_mail_notification
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-SMTP_HOST = os.getenv("SMTP_HOST", "")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASS = os.getenv("SMTP_PASS", "")
-FROM_ADDR = os.getenv("FROM_ADDR", "")
-EMAIL_RECIPIENT_WHITELIST = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
-
-
-def send_mail_notification(to_address: str, subject: str, body: str) -> None:
-    """Send an email notification.
-
-    This is a stub implementation. Replace it with actual email sending logic.
-    """
-
-    msg = EmailMessage()
-    msg["From"] = FROM_ADDR
-    msg["To"] = to_address
-    msg["Subject"] = subject
-    msg.set_content(body)
-
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as smtp:
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.ehlo()
-        smtp.login(SMTP_USER, SMTP_PASS)
-        smtp.send_message(msg)
 
 
 def evaluate_alert_condition(alert: Alert, current_price: dict) -> bool:
@@ -63,21 +35,14 @@ def evaluate_alert_condition(alert: Alert, current_price: dict) -> bool:
     elif alert.condition == "eq":
         return value_to_evaluate == alert.threshold
     else:
-        logger.error(f"Unknown alert condition: {alert.condition}")
+        logger.error("Unknown alert condition: %s", alert.condition)
         return False
 
 
 def run_alert_checks(db: Session) -> None:
-    """Evaluate active alerts and trigger notifications.
-
-    The concrete implementation depends on how alerts are stored and how
-    notifications should be delivered. The APScheduler background job configured
-    in ``api/src/main.py`` will call this function every 10 minutes.
-    """
-
-    # Get all active alerts and current prices
-    alerts: list[Alert] = crud.get_alerts_to_evaluate(db)
-    current_prices: list[dict] = crud.get_last_prices(db)
+    """Evaluate active alerts and trigger notifications."""
+    alerts: list[Alert] = alert_data.get_active_alerts(db)
+    current_prices: list[dict] = price_data.get_last_prices(db)
 
     for alert in alerts:
         current_price = next(
@@ -92,8 +57,11 @@ def run_alert_checks(db: Session) -> None:
         )
         if not current_price:
             logger.warning(
-                f"No current price found for alert {alert.id} "
-                f"({alert.token_name} on {alert.network}, primary market: {alert.is_primary_market})"
+                "No current price found for alert %s (%s on %s, primary market: %s)",
+                alert.id,
+                alert.token_name,
+                alert.network,
+                alert.is_primary_market,
             )
             continue
 
@@ -102,7 +70,6 @@ def run_alert_checks(db: Session) -> None:
         if not is_triggered:
             continue
 
-        # Send notification
         alert_metric_name = "price" if alert.metric == "price_eth" else "premium"
         subject = f"Alert triggered for the {alert_metric_name} of {alert.token_name} on {alert.network}"
         body = (
@@ -116,13 +83,12 @@ def run_alert_checks(db: Session) -> None:
         )
         try:
             send_mail_notification(alert.email, subject, body)
-            logger.info(f"Sent alert notification for alert {alert.id}")
-        except Exception as e:
-            logger.error(f"Failed to send alert notification to {alert.email}: {str(e)}")
+            logger.info("Sent alert notification for alert %s", alert.id)
+        except Exception as exc:  # pragma: no cover - external dependency
+            logger.error("Failed to send alert notification to %s: %s", alert.email, exc)
             continue
 
-        # Update alert status
         alert.trigger_count += 1
         alert.last_triggered_at = datetime.utcnow()
         alert.status = AlertStatus.TRIGGERED
-        crud.save_alert(db, alert)
+        alert_data.save_alert(db, alert)
