@@ -9,6 +9,11 @@ interface JwtPayload {
   sub?: string;
 }
 
+const isExpired = (expiresAt: string) => {
+  const expiresAtMs = new Date(expiresAt).getTime();
+  return Number.isNaN(expiresAtMs) || expiresAtMs <= Date.now();
+};
+
 const decodeEmailFromToken = (token: string | null) => {
   if (!token) {
     return null;
@@ -49,6 +54,10 @@ export const useAuth = () => {
 
     try {
       const parsed = JSON.parse(raw) as StoredToken;
+      if (isExpired(parsed.expires_at)) {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        return;
+      }
       state.value.loggedIn = true;
       state.value.token = parsed;
       state.value.email = decodeEmailFromToken(parsed.access_token);
