@@ -1,9 +1,10 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
+from rate_limiting import limiter
 from schemas.auth import (
     AuthChallengeRequest,
     AuthChallengeResponse,
@@ -14,6 +15,7 @@ from services import auth
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
+AUTH_RATE_LIMIT = "5/minute"
 
 
 @router.post(
@@ -21,7 +23,9 @@ logger = logging.getLogger(__name__)
     response_model=AuthChallengeResponse,
     status_code=202,
 )
+@limiter.limit(AUTH_RATE_LIMIT)
 def request_auth_challenge(
+    request: Request,  # required for SlowAPI rate limiting
     payload: AuthChallengeRequest,
     db: Session = Depends(get_db),
 ) -> AuthChallengeResponse:
@@ -35,7 +39,9 @@ def request_auth_challenge(
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit(AUTH_RATE_LIMIT)
 def finalize_login(
+    request: Request,  # required for SlowAPI rate limiting
     payload: AuthLoginRequest,
     db: Session = Depends(get_db),
 ) -> TokenResponse:

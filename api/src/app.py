@@ -4,10 +4,14 @@ from contextlib import asynccontextmanager, suppress
 from time import monotonic
 
 from fastapi import FastAPI
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.cors import CORSMiddleware
 
 import models
 from database import SessionLocal, engine
+from rate_limiting import limiter
 from routers import alerts as alerts_router
 from routers import auth as auth_router
 from routers import prices as prices_router
@@ -81,6 +85,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
 
     app.include_router(auth_router.router)
     app.include_router(alerts_router.router)
