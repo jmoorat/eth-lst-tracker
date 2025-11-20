@@ -93,7 +93,6 @@ const sendingChallenge = ref(false);
 const challengeSent = ref(false);
 const verifyingCode = ref(false);
 const errorMessage = ref('');
-const successMessage = ref('');
 
 const resetState = () => {
   email.value = '';
@@ -102,7 +101,6 @@ const resetState = () => {
   challengeSent.value = false;
   verifyingCode.value = false;
   errorMessage.value = '';
-  successMessage.value = '';
 };
 
 watch(
@@ -120,7 +118,6 @@ const sendChallenge = async () => {
   if (!email.value) return;
   sendingChallenge.value = true;
   errorMessage.value = '';
-  successMessage.value = '';
   try {
     await $fetch(`${config.public.apiBase}/auth/challenge`, {
       method: 'POST',
@@ -129,7 +126,6 @@ const sendChallenge = async () => {
       },
     });
     challengeSent.value = true;
-    successMessage.value = 'Login code sent to your email address.';
   } catch (error: any) {
     errorMessage.value = error?.data?.detail[0]?.msg || error?.data?.detail || 'Failed to send login code.';
   } finally {
@@ -141,7 +137,6 @@ const verifyCode = async () => {
   if (code.value.trim().length !== 6) return;
   verifyingCode.value = true;
   errorMessage.value = '';
-  successMessage.value = '';
   try {
     const response = await $fetch<{ access_token: string; expires_at: string }>(
       `${config.public.apiBase}/auth/login`,
