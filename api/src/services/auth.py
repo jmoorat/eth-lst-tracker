@@ -14,7 +14,7 @@ from schemas.auth import AuthenticatedUser
 from utils.email import send_mail_notification
 
 CHALLENGE_TTL_SECONDS = int(os.getenv("AUTH_CHALLENGE_TTL_SECONDS", "900"))
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "qsdfghjklm1234567890")
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 JWT_EXPIRATION_SECONDS = int(os.getenv("JWT_EXPIRATION_SECONDS", "3600"))
 MAGIC_LINK_BASE_URL = os.getenv("AUTH_MAGIC_LINK_BASE_URL", "")
 JWT_ALGORITHM = "HS256"
