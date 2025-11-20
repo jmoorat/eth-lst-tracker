@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class AuthChallengeRequest(BaseModel):
@@ -14,6 +14,12 @@ class AuthChallengeResponse(BaseModel):
 class AuthLoginRequest(BaseModel):
     email: EmailStr
     code: str
+
+    @field_validator("code")
+    def validate_code(cls, value):
+        if not value.isdigit() or len(value) != 6:
+            raise ValueError("code must be a 6-digit numeric string")
+        return value
 
 
 class TokenResponse(BaseModel):
