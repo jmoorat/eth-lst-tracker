@@ -93,7 +93,7 @@ def validate_auth_challenge(db: Session, email: str, code: str) -> models.AuthCh
         .first()
     )
 
-    if challenge is None or challenge.code_hash != _hash_code(code):
+    if challenge is None or not secrets.compare_digest(challenge.code_hash, _hash_code(code)):
         raise InvalidAuthChallengeError("Invalid or expired login code.")
 
     challenge.consumed_at = _now()
