@@ -1,33 +1,29 @@
 <script setup lang="ts">
 import { getTokenFullName } from '~/utils/tokens';
 
-
 interface TokenRow extends ApiToken {
   secondary_markets_count: number;
   fullName: string;
 }
 
-const config = useRuntimeConfig();
-
-const { data: apiData, pending, error, refresh } = await useFetch<ApiToken[]>(
-  `${config.public.apiBase}/prices`,
-);
+const { prices, pending, error, refresh, loadPrices } = usePrices();
+await loadPrices();
 
 const filteredTokens = computed<TokenRow[]>(() => {
-  if (!apiData.value) return [];
+  if (!prices.value) return [];
 
-  const primaryTokens = apiData.value.filter(
+  const primaryTokens = prices.value.filter(
     token => token.is_primary_market && token.network === 'ethereum',
   );
 
-  const secondaryPremiums = apiData.value
+  const secondaryPremiums = prices.value
     .filter(token => !token.is_primary_market && token.network === 'ethereum')
     .reduce((acc, token) => {
       acc[token.token_name] = token.premium_percentage;
       return acc;
     }, {} as Record<string, number>);
 
-  const secondaryMarketCounts = apiData.value
+  const secondaryMarketCounts = prices.value
     .filter(token => !token.is_primary_market)
     .reduce((acc, token) => {
       acc[token.token_name] = (acc[token.token_name] || 0) + 1;

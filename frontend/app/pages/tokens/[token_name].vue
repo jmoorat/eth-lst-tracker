@@ -3,18 +3,16 @@ import type { TableColumn } from '#ui/components/Table.vue';
 import { getTokenFullName } from '~/utils/tokens';
 
 const route = useRoute();
-const config = useRuntimeConfig();
 const tokenParam = computed(() => route.params.token_name as string);
 
-const { data: apiData, pending, error, refresh } = await useFetch<ApiToken[]>(
-  `${config.public.apiBase}/prices`,
-);
+const { prices, pending, error, refresh, loadPrices } = usePrices();
+await loadPrices();
 
 const isRefreshing = ref(false);
 
 const tokensForName = computed<ApiToken[]>(() => {
-  if (!apiData.value) return [];
-  return apiData.value.filter(token => token.token_name === tokenParam.value);
+  if (!prices.value) return [];
+  return prices.value.filter(token => token.token_name === tokenParam.value);
 });
 
 const primaryToken = computed<ApiToken | null>(() => {
