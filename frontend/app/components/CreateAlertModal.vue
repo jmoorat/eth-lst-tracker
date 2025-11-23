@@ -20,23 +20,29 @@
         />
         <UForm class="space-y-4" @submit="submitAlert">
           <div class="grid gap-4 md:grid-cols-2">
-            <UFormField label="Token name" required>
-              <UInput
+            <UFormField
+              label="Token name"
+              required
+              :hint="pricesError ? 'Unable to load tokens' : undefined"
+            >
+              <USelect
                 v-model="form.token_name"
-                placeholder="stETH"
+                :items="tokenOptions"
+                placeholder="Select a token"
                 size="xl"
                 class="w-full"
-                :disabled="submitting"
+                :disabled="submitting || pricesPending"
               />
             </UFormField>
 
             <UFormField label="Network" required>
-              <UInput
+              <USelect
                 v-model="form.network"
-                placeholder="ethereum"
+                :items="networkOptions"
+                placeholder="Select a network"
                 size="xl"
                 class="w-full"
-                :disabled="submitting"
+                :disabled="submitting || !networkOptions.length"
               />
             </UFormField>
           </div>
@@ -53,7 +59,7 @@
             <UFormField label="Metric" required>
               <USelect
                 v-model="form.metric"
-                :items="metricDisplayOptions"
+                :items="!form.is_primary_market ? metricDisplayOptions : metricPrimaryMarketOptions"
                 size="xl"
                 :disabled="submitting"
               />
@@ -88,7 +94,7 @@
           <UFormField label="Type" required>
             <USelect
               v-model="form.type"
-              :options="typeDisplayOptions"
+              :items="typeDisplayOptions"
               size="xl"
               :disabled="submitting"
             />
@@ -131,8 +137,10 @@ const emit = defineEmits<{
 const toast = useToast();
 const config = useRuntimeConfig();
 const { authState } = useAuth();
+const { prices, pending: pricesPending, error: pricesError, loadPrices } = usePrices();
 
 const metricDisplayOptions: MetricDisplayOption[] = ["Price (ETH)", "Premium (%)"];
+const metricPrimaryMarketOptions: MetricDisplayOption[] = ["Price (ETH)"];
 const conditionDisplayOptions: ConditionDisplayOption[] = ["<", "≤", "=", "≥", ">"];
 const typeDisplayOptions: AlertDisplayType[] = ["One-off"];
 
@@ -153,7 +161,7 @@ const typeDisplayToOptionMap: Record<AlertDisplayType, AlertType> = {
   "One-off": "one_off",
 };
 
-const defaultFormValues = {
+const createDefaultFormValues = () => ({
   token_name: '',
   network: '',
   is_primary_market: false,
@@ -161,7 +169,7 @@ const defaultFormValues = {
   condition: '<' as ConditionDisplayOption,
   threshold: 1,
   type: 'One-off' as AlertDisplayType,
-};
+});
 
 const form = reactive<{
   token_name: string;
@@ -171,7 +179,7 @@ const form = reactive<{
   condition: ConditionDisplayOption;
   threshold: number;
   type: AlertDisplayType;
-}>(defaultFormValues);
+}>(createDefaultFormValues());
 
 type AlertPayload = {
   token_name: string;
@@ -185,7 +193,7 @@ type AlertPayload = {
 
 const payload = computed<AlertPayload>(() => ({
   token_name: form.token_name.trim(),
-  network: form.network.trim(),
+  network: uncapitalize(form.network.trim()),
   is_primary_market: form.is_primary_market,
   metric: metricDisplayToOptionMap[form.metric],
   condition: conditionDisplayToOptionMap[form.condition],
@@ -195,8 +203,27 @@ const payload = computed<AlertPayload>(() => ({
 
 const submitting = ref(false);
 const errorMessage = ref('');
+const tokenOptions = computed(() => {
+  return Array.from(
+    new Set((prices.value ?? []).map(token => token.token_name)),
+  ).sort();
+});
 
-const resetForm = () => defaultFormValues;
+const networkOptions = computed(() => {
+  if (!prices.value || !form.token_name) return [];
+  let tokensForSelectedName = prices.value.filter(token => token.token_name === form.token_name);
+  if (form.is_primary_market) {
+    return Array.from(new Set(tokensForSelectedName.filter(token => token.is_primary_market).map(token => capitalize(token.network)))).sort();
+  }
+  else {
+    return Array.from(new Set(tokensForSelectedName.map(token => capitalize(token.network)))).sort();
+  }
+});
+
+const resetForm = () => {
+  Object.assign(form, createDefaultFormValues());
+  errorMessage.value = '';
+};
 
 const internalOpen = computed({
   get: () => props.open,
@@ -208,7 +235,12 @@ watch(
   (open) => {
     if (!open) {
       setTimeout(() => resetForm(), 200);
+      return;
     }
+
+    loadPrices().catch(() => {
+      // errors are surfaced via pricesError; noop here
+    });
   },
 );
 
@@ -218,6 +250,47 @@ watch(
     // Reset threshold when metric changes
     form.threshold = metricDisplayToOptionMap[newMetric] === 'premium' ? 0 : 1;
   },
+)
+
+watch(
+  networkOptions,
+  (options) => {
+    // Ensure the selected network always matches the chosen token
+    if (form.network === '') {
+      return;
+    }
+
+    if (!options.length) {
+      form.network = '';
+      return;
+    }
+
+    if (!options.includes(form.network)) {
+      form.network = options[0] || '';
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => form.is_primary_market,
+  () => {
+    // Ensure the selected network always matches the chosen token
+    if (!networkOptions.value.length) {
+      form.network = '';
+      return;
+    }
+
+    if (!networkOptions.value.includes(form.network)) {
+      form.network = networkOptions.value[0] || '';
+    }
+
+    // Ensure metric is valid for primary market
+    if (form.is_primary_market && form.metric === 'Premium (%)') {
+      form.metric = 'Price (ETH)';
+    }
+  },
+  { immediate: true },
 )
 
 const submitAlert = async () => {
