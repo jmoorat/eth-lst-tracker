@@ -41,6 +41,11 @@ def get_alerts_by_email(db: Session, email: str):
     return db.query(models.Alert).filter(models.Alert.email == email).all()
 
 
+def get_alert_count_by_email(db: Session, email: str):
+    """Count the number of alerts associated with a specific email address."""
+    return db.query(models.Alert).filter(models.Alert.email == email).count()
+
+
 def get_alert_by_id(db: Session, alert_id: uuid.UUID):
     """Retrieve an alert by its unique identifier."""
     return db.query(models.Alert).filter(models.Alert.id == alert_id).first()

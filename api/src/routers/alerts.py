@@ -46,6 +46,9 @@ def create_alert(
             detail="The specified token, network, and market type combination is not available.",
         )
 
+    if alert_data.get_alert_count_by_email(db, user_email) >= 5:
+        raise HTTPException(status_code=400, detail="Maximum number of alerts reached for this email address.")
+
     alert_created: schemas.alert.Alert = alert_data.create_alert(db, alert)
     return alert_created
 
