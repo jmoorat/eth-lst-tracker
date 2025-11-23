@@ -21,11 +21,11 @@ const createModalOpen = ref(false);
                 variant="solid"
                 size="md"
                 class="md:size-xl"
-                icon="i-heroicons-plus-circle"
+                icon="i-heroicons-plus"
                 :disabled="!authState.loggedIn"
                 @click="createModalOpen = true"
             >
-              Create Alert
+              New Alert
             </UButton>
           </UTooltip>
         </div>

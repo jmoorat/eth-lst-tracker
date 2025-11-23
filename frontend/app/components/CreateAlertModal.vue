@@ -2,7 +2,7 @@
   <ClientOnly>
     <UModal
       v-model:open="internalOpen"
-      title="Create Alert"
+      title="New Alert"
       :close="{
         color: 'primary',
         variant: 'outline',
@@ -29,7 +29,7 @@
                 v-model="form.token_name"
                 :items="tokenOptions"
                 placeholder="Select a token"
-                size="xl"
+                size="lg"
                 class="w-full"
                 :disabled="submitting || pricesPending"
               />
@@ -40,7 +40,7 @@
                 v-model="form.network"
                 :items="networkOptions"
                 placeholder="Select a network"
-                size="xl"
+                size="lg"
                 class="w-full"
                 :disabled="submitting || !networkOptions.length"
               />
@@ -69,7 +69,7 @@
               <USelect
                 v-model="form.condition"
                 :items="conditionDisplayOptions"
-                size="xl"
+                size="lg"
                 :disabled="submitting"
               />
             </UFormField>
@@ -84,7 +84,7 @@
                 :step="payload.metric === 'premium' ? 0.1 : 0.01"
                 :min="payload.metric === 'price_eth' ? 0 : undefined"
                 :default-value="1"
-                size="xl"
+                size="lg"
                 class="w-full"
                 :disabled="submitting"
               />
@@ -95,7 +95,7 @@
             <USelect
               v-model="form.type"
               :items="typeDisplayOptions"
-              size="xl"
+              size="lg"
               :disabled="submitting"
             />
           </UFormField>
@@ -104,8 +104,9 @@
             block
             type="submit"
             color="primary"
-            size="xl"
+            size="lg"
             :loading="submitting"
+            icon="i-heroicons-check"
           >
             Create alert
           </UButton>
