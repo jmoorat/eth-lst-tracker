@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy.orm import Session
 
 import models
@@ -34,8 +36,24 @@ def get_active_alerts(db: Session):
     return db.query(models.Alert).filter(models.Alert.status == schemas.alert.AlertStatus.ACTIVE).all()
 
 
+def get_alerts_by_email(db: Session, email: str):
+    """Retrieve all alerts associated with a specific email address."""
+    return db.query(models.Alert).filter(models.Alert.email == email).all()
+
+
+def get_alert_by_id(db: Session, alert_id: uuid.UUID):
+    """Retrieve an alert by its unique identifier."""
+    return db.query(models.Alert).filter(models.Alert.id == alert_id).first()
+
+
 def save_alert(db: Session, alert: models.Alert):
     """Persist changes to an existing alert."""
     db.commit()
     db.refresh(alert)
     return alert
+
+
+def delete_alert(db: Session, alert: models.Alert):
+    """Delete an alert from the database."""
+    db.delete(alert)
+    db.commit()
