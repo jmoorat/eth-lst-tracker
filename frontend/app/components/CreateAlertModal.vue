@@ -133,6 +133,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean];
+  created: [];
 }>();
 
 const toast = useToast();
@@ -328,6 +329,7 @@ const submitAlert = async () => {
       title: 'Alert created',
       color: 'success',
     });
+    emit('created');
     internalOpen.value = false;
   } catch (error: any) {
     errorMessage.value =
