@@ -302,7 +302,9 @@ const submitAlert = async () => {
     return;
   }
 
-  if (!form.token_name.trim() || !form.network.trim() || !form.threshold) {
+  const thresholdMissing = form.threshold === null || form.threshold === undefined || Number.isNaN(Number(form.threshold));
+
+  if (!form.token_name.trim() || !form.network.trim() || thresholdMissing) {
     errorMessage.value = 'Please fill in all required fields.';
     return;
   }
