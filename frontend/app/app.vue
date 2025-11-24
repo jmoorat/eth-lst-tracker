@@ -10,6 +10,17 @@
             >
               {{ authState.email }}
             </span>
+            <UTooltip text="Alerts">
+              <UChip color="secondary" variant="soft" size="3xl" class="relative" inset :text="5" :show="false">
+                <UButton
+                  icon="i-heroicons-bell"
+                  size="md"
+                  color="primary"
+                  variant="ghost"
+                  @click="handleAlertClick()"
+                />
+              </UChip>
+            </UTooltip>
             <UTooltip :text="authState.loggedIn ? 'Log out' : 'Log in'">
               <UButton
                 :icon="authState.loggedIn ? 'i-heroicons-arrow-right-on-rectangle' : 'i-heroicons-arrow-left-on-rectangle'"
@@ -50,6 +61,7 @@ import { onMounted, ref } from 'vue';
 
 const toast = useToast();
 const { authState, loadFromStorage, clearToken } = useAuth();
+const router = useRouter();
 
 const loginModalOpen = ref(false);
 
@@ -75,5 +87,10 @@ const handleLoggedIn = () => {
     color: 'success',
   });
   loginModalOpen.value = false;
+};
+
+const handleAlertClick = () => {
+  // change route to /alerts
+  router.push('/alerts');
 };
 </script>
