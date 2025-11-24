@@ -325,10 +325,6 @@ const submitAlert = async () => {
       },
     });
 
-    toast.add({
-      title: 'Alert created',
-      color: 'success',
-    });
     emit('created');
     internalOpen.value = false;
   } catch (error: any) {
