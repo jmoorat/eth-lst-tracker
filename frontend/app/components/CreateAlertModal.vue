@@ -142,14 +142,14 @@ const config = useRuntimeConfig();
 const { authState } = useAuth();
 const { prices, pending: pricesPending, error: pricesError, loadPrices } = usePrices();
 
-const metricDisplayOptions: MetricDisplayOption[] = ["Price (ETH)", "Premium (%)"];
+const metricDisplayOptions: MetricDisplayOption[] = ["Premium (%)", "Price (ETH)", ];
 const metricPrimaryMarketOptions: MetricDisplayOption[] = ["Price (ETH)"];
 const conditionDisplayOptions: ConditionDisplayOption[] = ["<", "≤", "=", "≥", ">"];
 const typeDisplayOptions: AlertDisplayType[] = ["One-off"];
 
 const metricDisplayToOptionMap: Record<MetricDisplayOption, MetricOption> = {
-  "Price (ETH)": "price_eth",
   "Premium (%)": "premium",
+  "Price (ETH)": "price_eth",
 };
 
 const conditionDisplayToOptionMap: Record<ConditionDisplayOption, ConditionOption> = {
@@ -168,7 +168,7 @@ const createDefaultFormValues = () => ({
   token_name: '',
   network: '',
   is_primary_market: false,
-  metric: 'Price (ETH)' as MetricDisplayOption,
+  metric: 'Premium (%)' as MetricDisplayOption,
   condition: '<' as ConditionDisplayOption,
   threshold: 1,
   type: 'One-off' as AlertDisplayType,
