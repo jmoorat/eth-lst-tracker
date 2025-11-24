@@ -170,7 +170,7 @@ const createDefaultFormValues = () => ({
   is_primary_market: false,
   metric: 'Premium (%)' as MetricDisplayOption,
   condition: '<' as ConditionDisplayOption,
-  threshold: 1,
+  threshold: 0,
   type: 'One-off' as AlertDisplayType,
 });
 
