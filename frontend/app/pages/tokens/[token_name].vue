@@ -29,7 +29,11 @@ const secondaryMarkets = computed<ApiToken[]>(() => {
 });
 
 const columns: TableColumn<ApiToken>[] = [
-  { accessorKey: 'network', header: 'Network' },
+  {
+    accessorKey: 'network',
+    header: 'Network',
+    cell: ({row}) => capitalize(row.getValue('network')),
+  },
   {
     accessorKey: 'price_eth',
     header: 'Price (ETH)',
@@ -54,7 +58,10 @@ const formatPrice = (price: number | null | undefined): string => {
 };
 
 const availableNetworksLabel = computed(() => {
-  return availableNetworks.value.length ? availableNetworks.value.join(', ') : 'N/A';
+  // return capitalized network names separated by commas
+  return availableNetworks.value
+    .map(network => capitalize(network))
+    .join(', ') || 'N/A';
 });
 
 const lastUpdatedLabel = computed(() => {
