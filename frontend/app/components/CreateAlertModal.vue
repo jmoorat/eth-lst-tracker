@@ -60,7 +60,7 @@
               <USelect
                 v-model="form.metric"
                 :items="!form.is_primary_market ? metricDisplayOptions : metricPrimaryMarketOptions"
-                size="xl"
+                size="lg"
                 :disabled="submitting"
               />
             </UFormField>
@@ -118,6 +118,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
+import { capitalize, uncapitalize } from "~/utils/string";
 
 type MetricOption = 'price_eth' | 'premium';
 type ConditionOption = 'lt' | 'lte' | 'eq' | 'gte' | 'gt';
@@ -252,7 +253,7 @@ watch(
     // Reset threshold when metric changes
     form.threshold = metricDisplayToOptionMap[newMetric] === 'premium' ? 0 : 1;
   },
-)
+);
 
 watch(
   networkOptions,
@@ -293,7 +294,7 @@ watch(
     }
   },
   { immediate: true },
-)
+);
 
 const submitAlert = async () => {
   errorMessage.value = '';

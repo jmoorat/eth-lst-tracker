@@ -25,7 +25,6 @@
           color="primary"
           variant="solid"
           size="md"
-          class="md:size-xl"
           icon="i-heroicons-plus"
           :disabled="!loggedIn"
           @click="$emit('create')"
