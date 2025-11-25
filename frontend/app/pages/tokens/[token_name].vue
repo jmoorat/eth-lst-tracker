@@ -142,6 +142,12 @@ const handleRefresh = async () => {
         </div>
       </UCard>
 
+      <TokenPremiumHistoryChart
+        v-if="tokensForName.length"
+        :token-name="tokenParam"
+        :networks="availableNetworks"
+      />
+
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 class="text-2xl font-semibold">Secondary market prices per network</h2>
