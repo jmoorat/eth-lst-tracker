@@ -151,10 +151,13 @@ const chartOptions = computed<ECBasicOption>(() => {
 
 <template>
   <UCard>
-    <div class="space-y-4">
+    <template #header>
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 class="text-2xl font-semibold">Premium history on secondary markets</h3>
+          <h2 class="text-2xl font-semibold">Premium history</h2>
+          <p class="text-sm text-gray-500">
+            View the historical premium of {{ props.tokenName }} on secondary markets.
+          </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <UButton
@@ -169,7 +172,8 @@ const chartOptions = computed<ECBasicOption>(() => {
           </UButton>
         </div>
       </div>
-
+    </template>
+    <div class="space-y-4">
       <UAlert
         v-if="loadError"
         color="error"
