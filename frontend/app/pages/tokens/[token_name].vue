@@ -3,16 +3,14 @@ import type { TableColumn } from '#ui/components/Table.vue';
 import { getTokenFullName } from '~/utils/tokens';
 
 const route = useRoute();
-const tokenParam = computed(() => route.params.token_name as string);
+const tokenName = computed(() => route.params.token_name as string);
 
 const { prices, pending, error, refresh, loadPrices } = usePrices();
 await loadPrices();
 
-const isRefreshing = ref(false);
-
 const tokensForName = computed<ApiToken[]>(() => {
   if (!prices.value) return [];
-  return prices.value.filter(token => token.token_name === tokenParam.value);
+  return prices.value.filter(token => token.token_name === tokenName.value);
 });
 
 const primaryToken = computed<ApiToken | null>(() => {
@@ -36,8 +34,8 @@ const columns: TableColumn<ApiToken>[] = [
   },
   {
     accessorKey: 'price_eth',
-    header: 'Price (ETH)',
-    cell: ({ row }) => Number(row.getValue('price_eth')).toFixed(4),
+    header: 'Price',
+    cell: ({ row }) => `${Number(row.getValue('price_eth')).toFixed(4)} ETH`,
   },
   {
     accessorKey: 'premium_percentage',
@@ -50,7 +48,7 @@ const tokenNotFound = computed(
   () => !pending.value && !error.value && tokensForName.value.length === 0,
 );
 
-const tokenTitle = computed(() => getTokenFullName(tokenParam.value));
+const tokenTitle = computed(() => getTokenFullName(tokenName.value));
 
 const formatPrice = (price: number | null | undefined): string => {
   if (price === undefined || price === null) return 'N/A';
@@ -68,17 +66,6 @@ const lastUpdatedLabel = computed(() => {
   if (!primaryToken.value) return 'N/A';
   return new Date(primaryToken.value.timestamp).toLocaleString();
 });
-
-const handleRefresh = async () => {
-  if (isRefreshing.value) return;
-
-  isRefreshing.value = true;
-  try {
-    await refresh();
-  } finally {
-    isRefreshing.value = false;
-  }
-};
 </script>
 
 <template>
@@ -89,20 +76,7 @@ const handleRefresh = async () => {
       variant="soft"
       title="Error while loading data"
       description="Unable to fetch token data. Please try again."
-    >
-      <template #actions>
-        <UButton
-          color="error"
-          variant="outline"
-          size="xs"
-          :loading="isRefreshing"
-          icon="i-heroicons-arrow-path"
-          @click="handleRefresh"
-        >
-          Retry
-        </UButton>
-      </template>
-    </UAlert>
+    />
 
     <div v-if="pending" class="space-y-4">
       <USkeleton class="h-32 rounded-2xl" />
@@ -124,7 +98,7 @@ const handleRefresh = async () => {
           <div>
             <h1 class="text-3xl font-semibold">
               {{ tokenTitle }}
-              <span class="text-xl text-gray-500">({{ primaryToken?.token_name ?? tokenParam }})</span>
+              <span class="text-xl text-gray-500">({{ primaryToken?.token_name ?? tokenName }})</span>
             </h1>
           </div>
           <div class="grid gap-4 md:grid-cols-2">
@@ -144,23 +118,23 @@ const handleRefresh = async () => {
 
       <TokenPremiumHistoryChart
         v-if="tokensForName.length"
-        :token-name="tokenParam"
+        :token-name="tokenName"
         :networks="availableNetworks"
       />
+      <UCard>
+        <template #header>
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-semibold">Latest data</h2>
+              <p class="text-sm text-gray-500">
+                Latest prices and premiums of {{ tokenName }} on secondary markets.
+              </p>
+            </div>
+          </div>
+        </template>
+        <UTable :data="secondaryMarkets" :columns="columns" />
+      </UCard>
 
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 class="text-2xl font-semibold">Secondary market prices per network</h2>
-          <p class="text-sm text-gray-500">
-            Each line represents a network on which the token is available to trade on the secondary market.
-          </p>
-        </div>
-        <UButton :loading="isRefreshing" icon="i-heroicons-arrow-path" @click="handleRefresh">
-          Refresh
-        </UButton>
-      </div>
-
-      <UTable :data="secondaryMarkets" :columns="columns" />
     </template>
   </div>
 </template>
