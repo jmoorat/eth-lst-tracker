@@ -2,7 +2,7 @@
   <ClientOnly>
     <UModal
       v-model:open="internalOpen"
-      title="Login"
+      title="Log in"
       :close="{
         color: 'primary',
         variant: 'outline',
@@ -31,7 +31,7 @@
             :disabled="!email"
             type="submit"
           >
-            Send login code
+            Send authentication code
           </UButton>
         </UForm>
 
@@ -39,16 +39,17 @@
           <p class="text-sm">
             We sent a 6-digit code to {{ email }}. Enter it below to finish logging in.
           </p>
-          <UFormField label="6-Digit Code" required>
-            <UInput
-              v-model="code"
-              type="text"
-              placeholder="123456"
-              size="xl"
-              class="w-full"
-              :disabled="verifyingCode"
-            />
-
+          <UFormField required>
+            <div class="flex justify-center">
+              <UPinInput
+                v-model="code"
+                :length="6"
+                type="number"
+                size="xl"
+                :disabled="verifyingCode"
+                otp
+              />
+            </div>
           </UFormField>
 
           <UButton
@@ -56,7 +57,7 @@
             color="primary"
             icon="i-heroicons-check"
             :loading="verifyingCode"
-            :disabled="code.trim().length !== 6"
+            :disabled="code.length !== 6"
             type="submit"
           >
             Verify code and login
@@ -88,7 +89,7 @@ const internalOpen = computed({
 });
 
 const email = ref('');
-const code = ref('');
+const code = ref([]);
 const sendingChallenge = ref(false);
 const challengeSent = ref(false);
 const verifyingCode = ref(false);
@@ -96,7 +97,7 @@ const errorMessage = ref('');
 
 const resetState = () => {
   email.value = '';
-  code.value = '';
+  code.value = [];
   sendingChallenge.value = false;
   challengeSent.value = false;
   verifyingCode.value = false;
@@ -134,7 +135,7 @@ const sendChallenge = async () => {
 };
 
 const verifyCode = async () => {
-  if (code.value.trim().length !== 6) return;
+  if (code.value.length !== 6) return;
   verifyingCode.value = true;
   errorMessage.value = '';
   try {
@@ -144,7 +145,7 @@ const verifyCode = async () => {
         method: 'POST',
         body: {
           email: email.value,
-          code: code.value.trim(),
+          code: code.value.join('').trim(),
         },
       },
     );
