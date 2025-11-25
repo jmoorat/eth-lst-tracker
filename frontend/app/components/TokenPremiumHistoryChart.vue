@@ -99,10 +99,8 @@ const fetchHistory = async () => {
 watch([selectedResolution, () => props.networks], fetchHistory, { immediate: true });
 
 const chartOptions = computed<ECBasicOption>(() => {
-  const legendEntries: string[] = [];
   const series = props.networks.map((network, index) => {
     const points = (historyByNetwork.value[network] ?? []).map(point => [point.timestamp, point.premium_percentage]);
-    legendEntries.push(capitalize(network));
 
     return {
       name: capitalize(network),
