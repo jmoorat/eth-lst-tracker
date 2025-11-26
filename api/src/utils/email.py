@@ -13,6 +13,7 @@ FROM_ADDR = os.getenv("FROM_ADDR", "")
 
 def is_email_address_in_whitelist(email: str) -> bool:
     """Check if the given email address is in the allowed whitelist."""
+
     whitelist = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
     if whitelist == ["*"] or whitelist == [""]:
         return True

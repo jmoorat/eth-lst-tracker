@@ -6,6 +6,11 @@ from pydantic import BaseModel, EmailStr, field_validator
 class AuthChallengeRequest(BaseModel):
     email: EmailStr
 
+    @field_validator("email")
+    @classmethod
+    def normalize_email_value(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
+
 
 class AuthChallengeResponse(BaseModel):
     expires_at: datetime
@@ -14,6 +19,11 @@ class AuthChallengeResponse(BaseModel):
 class AuthLoginRequest(BaseModel):
     email: EmailStr
     code: str
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email_value(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
 
     @field_validator("code")
     def validate_code(cls, value):

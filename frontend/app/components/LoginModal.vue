@@ -94,6 +94,7 @@ const sendingChallenge = ref(false);
 const challengeSent = ref(false);
 const verifyingCode = ref(false);
 const errorMessage = ref('');
+const normalizeEmail = (value: string) => value.trim().toLowerCase();
 
 const resetState = () => {
   email.value = '';
@@ -116,14 +117,17 @@ watch(
 );
 
 const sendChallenge = async () => {
-  if (!email.value) return;
+  const normalizedEmail = normalizeEmail(email.value);
+  if (!normalizedEmail) return;
+
+  email.value = normalizedEmail;
   sendingChallenge.value = true;
   errorMessage.value = '';
   try {
     await $fetch(`${config.public.apiBase}/auth/challenge`, {
       method: 'POST',
       body: {
-        email: email.value,
+        email: normalizedEmail,
       },
     });
     challengeSent.value = true;
@@ -136,6 +140,10 @@ const sendChallenge = async () => {
 
 const verifyCode = async () => {
   if (code.value.length !== 6) return;
+  const normalizedEmail = normalizeEmail(email.value);
+  if (!normalizedEmail) return;
+
+  email.value = normalizedEmail;
   verifyingCode.value = true;
   errorMessage.value = '';
   try {
@@ -144,7 +152,7 @@ const verifyCode = async () => {
       {
         method: 'POST',
         body: {
-          email: email.value,
+          email: normalizedEmail,
           code: code.value.join('').trim(),
         },
       },
