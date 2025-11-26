@@ -2,8 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, field_validator
 
-from utils.email import normalize_email
-
 
 class AuthChallengeRequest(BaseModel):
     email: EmailStr
@@ -11,7 +9,7 @@ class AuthChallengeRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_email_value(cls, value: EmailStr) -> str:
-        return normalize_email(str(value))
+        return str(value).strip().lower()
 
 
 class AuthChallengeResponse(BaseModel):
@@ -25,7 +23,7 @@ class AuthLoginRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_email_value(cls, value: EmailStr) -> str:
-        return normalize_email(str(value))
+        return str(value).strip().lower()
 
     @field_validator("code")
     def validate_code(cls, value):
@@ -42,8 +40,3 @@ class TokenResponse(BaseModel):
 
 class AuthenticatedUser(BaseModel):
     email: EmailStr
-
-    @field_validator("email")
-    @classmethod
-    def normalize_email_value(cls, value: EmailStr) -> str:
-        return normalize_email(str(value))

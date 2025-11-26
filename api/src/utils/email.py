@@ -11,20 +11,13 @@ SMTP_PASS = os.getenv("SMTP_PASS", "")
 FROM_ADDR = os.getenv("FROM_ADDR", "")
 
 
-def normalize_email(email: str) -> str:
-    """Normalize email addresses for comparisons and storage."""
-
-    return email.strip().lower()
-
-
 def is_email_address_in_whitelist(email: str) -> bool:
     """Check if the given email address is in the allowed whitelist."""
 
-    whitelist_env = os.getenv("EMAIL_RECIPIENT_WHITELIST", "")
-    if whitelist_env.strip() in ("", "*"):
+    whitelist = os.getenv("EMAIL_RECIPIENT_WHITELIST", "").split(",")
+    if whitelist == ["*"] or whitelist == [""]:
         return True
-    whitelist = {normalize_email(address) for address in whitelist_env.split(",") if address.strip()}
-    return normalize_email(email) in whitelist
+    return email in whitelist
 
 
 def send_mail_notification(to_address: str, subject: str, body: str) -> None:
