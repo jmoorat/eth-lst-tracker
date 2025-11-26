@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 import models
 from schemas.auth import AuthenticatedUser
-from utils.email import send_mail_notification
+from utils.email import normalize_email, send_mail_notification
 
 CHALLENGE_TTL_SECONDS = int(os.getenv("AUTH_CHALLENGE_TTL_SECONDS", "900"))
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
@@ -51,6 +51,7 @@ def _generate_code() -> str:
 def create_auth_challenge(db: Session, email: str) -> tuple[models.AuthChallenge, str]:
     """Create and persist a passwordless challenge for the email."""
 
+    email = normalize_email(email)
     challenge = models.AuthChallenge(
         email=email,
         code_hash=_hash_code(code := _generate_code()),
@@ -65,6 +66,7 @@ def create_auth_challenge(db: Session, email: str) -> tuple[models.AuthChallenge
 def send_challenge_email(email: str, code: str) -> None:
     """Deliver the challenge code via email."""
 
+    email = normalize_email(email)
     link = ""
     if MAGIC_LINK_BASE_URL:
         query = urllib.parse.urlencode({"email": email, "code": code})
@@ -82,6 +84,7 @@ def send_challenge_email(email: str, code: str) -> None:
 def validate_auth_challenge(db: Session, email: str, code: str) -> models.AuthChallenge:
     """Validate and consume the most recent challenge for the user."""
 
+    email = normalize_email(email)
     challenge = (
         db.query(models.AuthChallenge)
         .filter(
@@ -111,6 +114,7 @@ def _require_jwt_secret() -> str:
 def create_access_token(email: str) -> tuple[str, datetime]:
     """Create a signed JWT for the provided email."""
 
+    email = normalize_email(email)
     secret = _require_jwt_secret()
     now = _now()
     expires_at = now + timedelta(seconds=JWT_EXPIRATION_SECONDS)
