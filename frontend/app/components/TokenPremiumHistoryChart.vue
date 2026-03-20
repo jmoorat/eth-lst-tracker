@@ -37,7 +37,7 @@ const resolutionOptions: Array<{ label: string; value: HistoryResolution; descri
   { label: 'Monthly', value: '1m', description: 'Monthly buckets' },
 ];
 
-const selectedResolution = ref<HistoryResolution>('1w');
+const selectedResolution = ref<HistoryResolution>('1d');
 const historyByNetwork = ref<Record<string, PriceHistoryPoint[]>>({});
 const loading = ref(false);
 const loadError = ref<string | null>(null);
