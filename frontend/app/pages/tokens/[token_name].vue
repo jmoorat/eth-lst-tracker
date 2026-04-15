@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '#ui/components/Table.vue';
 import { getTokenFullName } from '~/utils/tokens';
+import { ref } from 'vue';
 
 const route = useRoute();
 const tokenName = computed(() => route.params.token_name as string);
@@ -42,7 +43,19 @@ const columns: TableColumn<ApiToken>[] = [
     header: 'Premium',
     cell: ({ row }) => `${Number(row.getValue('premium_percentage')).toFixed(2)}%`,
   },
+  {
+    id: 'actions',
+    header: '',
+  },
 ] as const;
+
+const createAlertModalOpen = ref(false);
+const pendingAlertRow = ref<ApiToken | null>(null);
+
+const openCreateAlertModal = (token: ApiToken) => {
+  pendingAlertRow.value = token;
+  createAlertModalOpen.value = true;
+};
 
 const tokenNotFound = computed(
   () => !pending.value && !error.value && tokensForName.value.length === 0,
@@ -132,8 +145,26 @@ const lastUpdatedLabel = computed(() => {
             </div>
           </div>
         </template>
-        <UTable :data="secondaryMarkets" :columns="columns" />
+        <UTable :data="secondaryMarkets" :columns="columns">
+          <template #actions-cell="{ row }">
+            <UButton
+              size="xs"
+              variant="ghost"
+              icon="i-heroicons-bell-plus"
+              @click="openCreateAlertModal(row.original)"
+            >
+              New alert
+            </UButton>
+          </template>
+        </UTable>
       </UCard>
+
+      <CreateAlertModal
+        v-model:open="createAlertModalOpen"
+        :initial-token="pendingAlertRow?.token_name"
+        :initial-network="pendingAlertRow?.network"
+        :initial-is-primary-market="false"
+      />
 
     </template>
   </div>

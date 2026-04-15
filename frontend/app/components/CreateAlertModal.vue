@@ -130,6 +130,9 @@ type AlertDisplayType = 'One-off';
 
 const props = defineProps<{
   open: boolean;
+  initialToken?: string;
+  initialNetwork?: string;
+  initialIsPrimaryMarket?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -244,6 +247,10 @@ watch(
     loadPrices().catch(() => {
       // errors are surfaced via pricesError; noop here
     });
+
+    if (props.initialToken) form.token_name = props.initialToken;
+    if (props.initialIsPrimaryMarket !== undefined) form.is_primary_market = props.initialIsPrimaryMarket;
+    if (props.initialNetwork) form.network = capitalize(props.initialNetwork);
   },
 );
 
