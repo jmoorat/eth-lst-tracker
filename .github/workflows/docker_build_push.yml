@@ -20,6 +20,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Extract short commit SHA
+      run: echo "COMMIT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
     - name: Login to Docker registry
       uses: docker/login-action@v3
       with:
@@ -33,4 +36,6 @@ jobs:
         context: ${{ inputs.project_path }}
         file: ${{ inputs.dockerfile_path }}
         push: true
-        tags: ${{ secrets.DOCKER_REGISTRY_ENDPOINT }}/${{ inputs.image_name }}:latest
+        tags: |
+          ${{ secrets.DOCKER_REGISTRY_ENDPOINT }}/${{ inputs.image_name }}:latest
+          ${{ secrets.DOCKER_REGISTRY_ENDPOINT }}/${{ inputs.image_name }}:${{ env.COMMIT_SHA }}
