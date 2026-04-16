@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '#ui/components/Table.vue';
 import { getTokenFullName } from '~/utils/tokens';
-import { ref } from 'vue';
+import { ref, h, resolveComponent } from 'vue';
 
 const route = useRoute();
 const tokenName = computed(() => route.params.token_name as string);
@@ -27,6 +27,14 @@ const secondaryMarkets = computed<ApiToken[]>(() => {
   return tokensForName.value.filter(token => !token.is_primary_market);
 });
 
+const createAlertModalOpen = ref(false);
+const pendingAlertRow = ref<ApiToken | null>(null);
+
+const openCreateAlertModal = (token: ApiToken) => {
+  pendingAlertRow.value = token;
+  createAlertModalOpen.value = true;
+};
+
 const columns: TableColumn<ApiToken>[] = [
   {
     accessorKey: 'network',
@@ -45,17 +53,15 @@ const columns: TableColumn<ApiToken>[] = [
   },
   {
     id: 'actions',
-    header: '',
+    size: 10,
+    meta: { class: { td: 'text-right w-px' } },
+    cell: ({ row }) => h(resolveComponent('UButton'), {
+      variant: 'ghost',
+      icon: 'i-heroicons-bell-solid',
+      onClick: () => openCreateAlertModal(row.original),
+    }, () => 'New alert'),
   },
-] as const;
-
-const createAlertModalOpen = ref(false);
-const pendingAlertRow = ref<ApiToken | null>(null);
-
-const openCreateAlertModal = (token: ApiToken) => {
-  pendingAlertRow.value = token;
-  createAlertModalOpen.value = true;
-};
+];
 
 const tokenNotFound = computed(
   () => !pending.value && !error.value && tokensForName.value.length === 0,
@@ -145,18 +151,7 @@ const lastUpdatedLabel = computed(() => {
             </div>
           </div>
         </template>
-        <UTable :data="secondaryMarkets" :columns="columns">
-          <template #actions-cell="{ row }">
-            <UButton
-              size="xs"
-              variant="ghost"
-              icon="i-heroicons-bell-plus"
-              @click="openCreateAlertModal(row.original)"
-            >
-              New alert
-            </UButton>
-          </template>
-        </UTable>
+        <UTable :data="secondaryMarkets" :columns="columns" />
       </UCard>
 
       <CreateAlertModal
