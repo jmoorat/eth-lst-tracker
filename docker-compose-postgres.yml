@@ -1,0 +1,40 @@
+services:
+  price-fetcher:
+    build:
+      context: ./price-fetcher
+      dockerfile: Dockerfile
+    depends_on:
+      - timescaledb
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - LONG_RUN=true
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    depends_on:
+      - timescaledb
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: timescaledb
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lsttracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+
+volumes:
+  timescale_data:
